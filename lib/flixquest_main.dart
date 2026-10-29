@@ -73,6 +73,7 @@ class _FlixQuestState extends State<FlixQuest>
   FirebaseConfigController? _firebaseConfig;
   Timer? _widgetRefreshDebounce;
   StreamSubscription<List<ConnectivityResult>>? _tmdbNetworkSubscription;
+  bool? _networkAvailable;
   final Connectivity _connectivity = Connectivity();
 
   Future<void> _initConfig() async {
@@ -135,8 +136,11 @@ class _FlixQuestState extends State<FlixQuest>
       (results) {
         final available =
             results.any((result) => result != ConnectivityResult.none);
+        final reconnected = _networkAvailable == false && available;
+        _networkAvailable = available;
         TmdbConnectivity.instance.updateNetworkAvailability(available);
         if (available) unawaited(_checkTmdb());
+        if (reconnected) widget.appDependencyProvider.retryContentAfterReconnect();
       },
       onError: (Object _) {},
     );

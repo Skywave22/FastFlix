@@ -14,7 +14,7 @@ import 'package:flixquest/services/offline_download_service.dart';
 import 'package:flixquest/widgets/playback_loading_screen.dart';
 import 'package:flixquest/services/stream_size_estimator.dart';
 import 'package:flixquest/video_providers/provider_loader.dart';
-import 'package:flixquest/video_providers/scraper_api.dart';
+import 'package:flixquest/video_providers/provider_discovery.dart';
 import '../../controllers/recently_watched_database_controller.dart';
 import '../../provider/recently_watched_provider.dart';
 import '../../video_providers/common.dart';
@@ -92,6 +92,7 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
   final Map<String, Stopwatch> _providerStopwatches = {};
   int currentProviderIndex = 0;
   String _scraperApiUrl = '';
+  bool _providerDiscoveryFailed = false;
   final Map<String, int?> _streamSizeCacheByToken = {};
 
   Map<String, String> videos = {};
@@ -113,12 +114,17 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
   }
 
   Future<void> _loadProviders() async {
-    _scraperApiUrl = Provider.of<AppDependencyProvider>(context, listen: false)
-        .flixquestAPIURL;
+    final dependencies =
+        Provider.of<AppDependencyProvider>(context, listen: false);
+    _scraperApiUrl = dependencies.configuredFlixquestAPIURL;
     final providers = <VideoProvider>[];
     try {
-      providers.addAll(await ScraperApi(_scraperApiUrl).getProviders());
+      final discovered =
+          await ProviderDiscovery.load(dependencies.scraperApiCandidates);
+      _scraperApiUrl = discovered.baseUrl;
+      providers.addAll(discovered.providers);
     } catch (error) {
+      _providerDiscoveryFailed = true;
       debugPrint('Unable to load scraper providers: $error');
     }
 
@@ -252,7 +258,9 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
 
       // Check if we found a working provider
       if (firstWorkingProviderCode == null && mounted) {
-        _showErrorSheet(tr('tv_vid_404'));
+        _showErrorSheet(tr(_providerDiscoveryFailed
+            ? 'connection_playback_no_sources'
+            : 'tv_vid_404'));
         return;
       }
 

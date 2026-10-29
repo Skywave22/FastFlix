@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flixquest/constants/api_constants.dart';
 import 'package:flixquest/data/models/bootstrap_config.dart';
 import 'package:flixquest/data/repositories/config_repository.dart';
 import 'package:flixquest/provider/app_dependency_provider.dart';
@@ -41,7 +40,7 @@ class BootstrapViewModel extends ChangeNotifier {
         instances: value.network.flixquestApiInstances,
         url: value.network.flixquestApiUrlV2);
     dependencies.tmdbProxy = value.network.tmdbProxy;
-    TMDB_API_KEY = value.network.tmdbApiKey;
+    dependencies.setRemoteTmdbApiKey(value.network.tmdbApiKey);
     dependencies.applyOccasionalThemeCatalog(
         value.occasionalTheme.toDomain(resolvedAt: lastValidatedAt),
         preserveSelection: preserveThemeSelection);

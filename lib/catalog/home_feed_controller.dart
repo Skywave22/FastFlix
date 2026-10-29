@@ -374,8 +374,21 @@ class HomeFeedController {
   /// How many of the leading rows a title may appear in.
   static const maxLeadAppearances = 2;
 
-  Future<HomeFeed> load(HomeFilter filter) async {
+  Future<HomeFeed> load(
+    HomeFilter filter, {
+    void Function(HomeFeed feed)? onPartial,
+  }) async {
     final kinds = filter.kinds;
+    final partialRows = <MediaKind, KindRows>{};
+    void publishPartial(MediaKind kind, KindRows rows) {
+      if (onPartial == null) return;
+      partialRows[kind] = rows;
+      final partial = HomeFeed(
+        filter: filter,
+        rows: Map<MediaKind, KindRows>.unmodifiable(partialRows),
+      );
+      if (!partial.isEmpty) onPartial(partial);
+    }
     final shelves = <(int, MediaKind)>[
       ...switch (filter) {
         HomeFilter.all => allShelves,
@@ -403,6 +416,9 @@ class HomeFeedController {
               .where((shelf) => shelf.$2 == kind)
               .map((shelf) => shelf.$1)
               .toList(growable: false),
+          onPartial: onPartial == null
+              ? null
+              : (rows) => publishPartial(kind, rows),
         ),
     ]);
     final loadedGenres = await genres;
@@ -423,10 +439,33 @@ class HomeFeedController {
   /// [kind]'s rows, and its share of the hero's spotlight.
   Future<(KindRows, List<MediaItem>)> _rowsFor(
     MediaKind kind,
-    List<int> shelfProviders,
-  ) async {
-    Future<List<MediaItem>> list(HomeList list) =>
-        _orEmpty(source.list(kind, list));
+    List<int> shelfProviders, {
+    void Function(KindRows rows)? onPartial,
+  }) async {
+    final partialLists = <HomeList, List<MediaItem>>{};
+    Future<List<MediaItem>> list(HomeList list) async {
+      final items = await _orEmpty(source.list(kind, list));
+      if (onPartial != null) {
+        partialLists[list] = items;
+        List<MediaItem> partial(HomeList key) =>
+            partialLists[key] ?? const <MediaItem>[];
+        final lead = limitRepeats(<List<MediaItem>>[
+          partial(HomeList.trendingToday).take(10).toList(growable: false),
+          partial(HomeList.trendingWeek),
+          partial(HomeList.newReleases),
+        ]);
+        onPartial(KindRows(
+          topTen: lead[0],
+          animeTopTen: partial(HomeList.animeTrending).take(10).toList(),
+          trending: _row(lead[1]),
+          popular: _row(partial(HomeList.popular)),
+          newReleases: _row(lead[2]),
+          topRated: _row(partial(HomeList.topRated)),
+          upcoming: _row(partial(HomeList.upcoming)),
+        ));
+      }
+      return items;
+    }
     final shelves = Future.wait(<Future<ServiceShelf?>>[
       for (final providerId in shelfProviders) _shelf(providerId, kind),
     ]);

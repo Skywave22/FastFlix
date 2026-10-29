@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 
-import '../constants/api_constants.dart';
 import '../provider/app_dependency_provider.dart';
 import 'app_update_service.dart';
 import 'remote_config_refresh_controller.dart';
@@ -169,7 +168,7 @@ class AppRemoteConfig {
         .setTelegramChannelUrl(remoteConfig.getString(telegramChannelUrlKey));
     final remoteTmdbKey = remoteConfig.getString(tmdbApiKey).trim();
     if (remoteTmdbKey.isNotEmpty) {
-      TMDB_API_KEY = remoteTmdbKey;
+      provider.setRemoteTmdbApiKey(remoteTmdbKey);
     }
   }
 

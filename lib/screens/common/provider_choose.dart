@@ -11,7 +11,8 @@ import '../../design/skeleton.dart';
 import '../../mobile/widgets/details_parts.dart';
 import '../../mobile/widgets/page_kit.dart';
 import '../../video_providers/names.dart';
-import '../../video_providers/scraper_api.dart';
+import '../../video_providers/provider_discovery.dart';
+import 'connection_settings_screen.dart';
 
 class ProviderChooseScreen extends StatefulWidget {
   const ProviderChooseScreen({super.key});
@@ -34,7 +35,7 @@ class _ProviderChooseScreenState extends State<ProviderChooseScreen> {
 
   Future<void> _loadProviders() async {
     if (_refreshing) return;
-    final apiUrl = context.read<AppDependencyProvider>().flixquestAPIURL;
+    final candidates = context.read<AppDependencyProvider>().scraperApiCandidates;
     final settings = context.read<SettingsProvider>();
     if (mounted) {
       setState(() {
@@ -47,7 +48,7 @@ class _ProviderChooseScreenState extends State<ProviderChooseScreen> {
     final available = <VideoProvider>[];
     String? error;
     try {
-      available.addAll(await ScraperApi(apiUrl).getProviders());
+      available.addAll((await ProviderDiscovery.load(candidates)).providers);
     } catch (exception) {
       error = exception.toString();
     }
@@ -55,7 +56,10 @@ class _ProviderChooseScreenState extends State<ProviderChooseScreen> {
 
     if (!mounted) return;
     setState(() {
-      _providers = settings.orderStreamProviders(available);
+      // A temporary outage must not erase a previously discovered catalog.
+      if (error == null || _providers.isEmpty) {
+        _providers = settings.orderStreamProviders(available);
+      }
       _discoveryError = error;
       _loading = false;
       _refreshing = false;
@@ -118,9 +122,23 @@ class _ProviderChooseScreenState extends State<ProviderChooseScreen> {
               if (_discoveryError != null)
                 Padding(
                   padding: EdgeInsets.fromLTRB(gutter, AppSpace.lg, gutter, 0),
-                  child: DetailsMessage(
-                    message: tr('check_connection'),
-                    onRetry: _loadProviders,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      DetailsMessage(
+                        message: tr('connection_provider_error'),
+                        onRetry: _loadProviders,
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          await Navigator.of(context).push(MaterialPageRoute<void>(
+                            builder: (_) => const ConnectionSettingsScreen(),
+                          ));
+                          if (mounted) _loadProviders();
+                        },
+                        child: Text(tr('connection_settings')),
+                      ),
+                    ],
                   ),
                 ),
               KickerHeading(

@@ -140,6 +140,7 @@ Future<DevicePresentation> appInitialize({
   // matches the binary instead of a hardcoded string that drifts.
   currentAppVersion = (await PackageInfo.fromPlatform()).version;
   sharedPrefsSingleton = await SharedPreferencesSingleton.getInstance();
+  await appDependencyProvider.loadClientConnection();
   await settingsProvider.getCurrentAppMode();
   await settingsProvider.getFastFlixLogo();
   DevicePresentationService.instance.isTelevision =

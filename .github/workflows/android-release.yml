@@ -92,6 +92,21 @@ jobs:
             echo 'It is not suitable for a production release.'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Check example service reachability
+        if: ${{ steps.build_mode.outputs.mode == 'preview' }}
+        run: |
+          # Diagnostics only: GitHub's network is not a user's device/network.
+          # No credentials or configured secret URLs are sent or printed.
+          for target in \
+            'TMDB|https://api.themoviedb.org/3/configuration' \
+            'Example provider API|https://scraper-1.flixquest.app/api/v2/providers'; do
+            label="${target%%|*}"
+            url="${target#*|}"
+            status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --connect-timeout 5 --max-time 10 "$url")" || status="unreachable"
+            echo "::notice::$label reachability from CI: $status (no credentials sent)"
+          done
+
       - name: Set up Java 17
         uses: actions/setup-java@v6
         with:
@@ -126,10 +141,15 @@ jobs:
       - name: Run feature tests
         run: |
           set +e
-          flutter test --no-pub \
+          flutter test --no-pub --reporter expanded --concurrency 1 \
             test/anime_genre_test.dart \
             test/trending_anime_test.dart \
+            test/home_feed_controller_test.dart \
             test/home_screen_test.dart \
+            test/tv_home_controller_test.dart \
+            test/connection_settings_test.dart \
+            test/provider_discovery_test.dart \
+            test/data/scraper_cache_test.dart \
             test/fastflix_preferences_test.dart \
             test/hindi_source_priority_test.dart \
             test/manifest_size_estimator_test.dart \

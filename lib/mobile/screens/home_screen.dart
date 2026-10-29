@@ -20,6 +20,7 @@ import '../../provider/app_dependency_provider.dart';
 import '../../provider/recently_watched_provider.dart';
 import '../../provider/settings_provider.dart';
 import '../../screens/common/bookmark_screen.dart';
+import '../../screens/common/connection_settings_screen.dart';
 import '../../screens/common/downloads_screen.dart';
 import '../../screens/common/live_tv_screen.dart';
 import '../../services/ambient_theme_service.dart';
@@ -77,6 +78,9 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late HomeFilter _filter;
   bool _started = false;
+  String? _configurationKey;
+  int _configurationGeneration = 0;
+  final Map<HomeFilter, int> _requestSequence = <HomeFilter, int>{};
 
   /// Fades the rows in on a new filter; the outgoing rows just go, as the
   /// tabs do, so there is never two pages' worth of rows to draw.
@@ -90,6 +94,8 @@ class _HomeScreenState extends State<HomeScreen>
   final Set<HomeFilter> _failed = <HomeFilter>{};
   final Map<HomeFilter, List<HomeHero>> _heroes =
       <HomeFilter, List<HomeHero>>{};
+  final Set<HomeFilter> _completedFeeds = <HomeFilter>{};
+  final Set<HomeFilter> _completedHeroes = <HomeFilter>{};
   final Map<String, Color?> _tints = <String, Color?>{};
 
   /// The colour of the hero on show, washing down the top of the page. A
@@ -111,9 +117,30 @@ class _HomeScreenState extends State<HomeScreen>
       _tabs?.removeResetListener(MobileTab.home, _reset);
       _tabs = tabs?..addResetListener(MobileTab.home, _reset);
     }
+    final settings = context.watch<SettingsProvider>();
+    final dependencies = context.watch<AppDependencyProvider>();
+    final configurationKey = <Object>[
+      settings.appLanguage,
+      settings.enableProxy,
+      dependencies.tmdbProxy,
+      dependencies.contentConfigurationRevision,
+    ].join('|');
     if (!_started) {
       _started = true;
+      _configurationKey = configurationKey;
       _filter = tabs?.initialHomeFilter ?? HomeFilter.all;
+      _load(_filter);
+    } else if (_configurationKey != configurationKey) {
+      _configurationKey = configurationKey;
+      _configurationGeneration++;
+      _feeds.clear();
+      _failed.clear();
+      _heroes.clear();
+      _completedFeeds.clear();
+      _completedHeroes.clear();
+      _categoryItems.clear();
+      _logos?.dispose();
+      _logos = null;
       _load(_filter);
     }
     if (widget.showTitleLogos) _logos = _logosFor(context);
@@ -170,19 +197,37 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _load(HomeFilter filter) {
     _failed.remove(filter);
-    return _loading[filter] = _controller().load(filter).then((feed) {
-      if (!mounted) return;
+    // Show setup immediately on an unconfigured build, while still allowing a
+    // cached catalog or a late bootstrap key to recover in the background.
+    if (widget.source == null &&
+        !context.read<AppDependencyProvider>().hasTmdbKey) {
+      _failed.add(filter);
+    }
+    final generation = _configurationGeneration;
+    final sequence = (_requestSequence[filter] ?? 0) + 1;
+    _requestSequence[filter] = sequence;
+    bool current() => mounted &&
+        generation == _configurationGeneration &&
+        _requestSequence[filter] == sequence;
+    void publish(HomeFeed feed, {bool complete = false}) {
+      if (!current()) return;
       final first = _feeds[filter] == null;
       setState(() {
-        if (feed.isEmpty && first) {
+        if (complete) _completedFeeds.add(filter);
+        if (feed.isEmpty && first && complete) {
           _failed.add(filter);
         } else if (!feed.isEmpty) {
+          _failed.remove(filter);
           _feeds[filter] = feed;
         }
       });
-      if (first && filter == _filter) _fade.forward(from: 0);
-    }, onError: (Object _) {
-      if (mounted && _feeds[filter] == null) {
+      if (first && !feed.isEmpty && filter == _filter) _fade.forward(from: 0);
+    }
+
+    return _loading[filter] = _controller()
+        .load(filter, onPartial: publish)
+        .then((feed) => publish(feed, complete: true), onError: (Object _) {
+      if (current() && _feeds[filter] == null) {
         setState(() => _failed.add(filter));
       }
     });
@@ -219,17 +264,35 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  /// The hero's titles for the current filter, chosen once.
-  List<HomeHero> _heroesFor(HomeFeed feed, List<MediaItem> continueWatching) =>
-      _heroes.putIfAbsent(
-        _filter,
-        () => chooseHomeHeroes(
+  /// Preserve the first visible hero when the remaining rows arrive, but add
+  /// the complete spotlight so a quick partial response does not disable it.
+  List<HomeHero> _heroesFor(HomeFeed feed, List<MediaItem> continueWatching) {
+    List<HomeHero> choose() => chooseHomeHeroes(
           filter: _filter,
           feed: feed,
           continueWatching: continueWatching,
           now: widget.now?.call(),
-        ),
-      );
+        );
+    final existing = _heroes[_filter];
+    if (existing == null || existing.isEmpty) {
+      final selected = choose();
+      _heroes[_filter] = selected;
+      if (_completedFeeds.contains(_filter)) _completedHeroes.add(_filter);
+      return selected;
+    }
+    if (_completedFeeds.contains(_filter) &&
+        _completedHeroes.add(_filter)) {
+      final seen = existing.map((hero) => titleKey(hero.item)).toSet();
+      final merged = <HomeHero>[
+        ...existing,
+        for (final hero in choose())
+          if (seen.add(titleKey(hero.item))) hero,
+      ].take(HomeFeedController.spotlightLength).toList(growable: false);
+      _heroes[_filter] = merged;
+      return merged;
+    }
+    return existing;
+  }
 
   void _onHeroShown(HomeHero hero) {
     _shownHero = hero.item;
@@ -403,13 +466,27 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       ];
     } else if (_failed.contains(_filter)) {
+      final missingKey = widget.source == null &&
+          !context.read<AppDependencyProvider>().hasTmdbKey;
       content = <Widget>[
         SliverFillRemaining(
           hasScrollBody: false,
-          child: EmptyState.error(
-            message: tr('home_load_failed'),
-            onRetry: _retry,
-          ),
+          child: missingKey
+              ? EmptyState(
+                  icon: PhosphorIcons.gear(),
+                  title: tr('connection_setup_title'),
+                  message: tr('connection_setup_message'),
+                  actionLabel: tr('connection_configure'),
+                  onAction: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ConnectionSettingsScreen(),
+                    ),
+                  ),
+                )
+              : EmptyState.error(
+                  message: tr('home_load_failed'),
+                  onRetry: _retry,
+                ),
         ),
       ];
     } else {

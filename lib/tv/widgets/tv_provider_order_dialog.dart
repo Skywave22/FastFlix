@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../provider/app_dependency_provider.dart';
 import '../../provider/settings_provider.dart';
 import '../../video_providers/names.dart';
-import '../../video_providers/scraper_api.dart';
+import '../../video_providers/provider_discovery.dart';
 import 'tv_dialog.dart';
 import 'tv_list_row.dart';
 import 'tv_pill_button.dart';
@@ -75,8 +75,9 @@ class _TvProviderOrderContentState extends State<TvProviderOrderContent> {
     List<VideoProvider>? discovered;
     try {
       discovered = await (widget.loadProviders?.call() ??
-          ScraperApi(context.read<AppDependencyProvider>().flixquestAPIURL)
-              .getProviders());
+          ProviderDiscovery.load(
+            context.read<AppDependencyProvider>().scraperApiCandidates,
+          ).then((result) => result.providers));
     } catch (error) {
       debugPrint('TV provider discovery failed: $error');
     }
@@ -159,6 +160,8 @@ class _TvProviderOrderContentState extends State<TvProviderOrderContent> {
         if (_discoveryFailed) ...<Widget>[
           Text(
               tr('tv_could_not_refresh_sources_your_saved_order_is_unchanged')),
+          const SizedBox(height: 8),
+          Text(tr('connection_provider_error')),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerLeft,

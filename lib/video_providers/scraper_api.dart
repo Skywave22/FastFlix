@@ -23,11 +23,21 @@ class ScraperApi {
   final String baseUrl;
   final Dio _dio;
 
-  Future<List<VideoProvider>> getProviders() async {
+  Future<List<VideoProvider>> getProviders({
+    CancelToken? cancelToken,
+    Duration timeout = const Duration(seconds: 20),
+    bool useCache = true,
+  }) async {
     try {
       final uri = _endpoint('/providers');
       _logRequest(uri);
-      final response = await _get(uri);
+      final response = await _get(
+        uri,
+        timeout: timeout,
+        cancelToken: cancelToken,
+        retryLimit: 0,
+        useCache: useCache,
+      );
       _logResponse(uri, response);
       final body = _decodeObject(response.data ?? '');
       if ((response.statusCode ?? 0) < 200 ||
@@ -225,7 +235,11 @@ class ScraperApi {
     try {
       final uri = _endpoint(path, queryParameters);
       _logRequest(uri);
-      final response = await _get(uri, timeout: const Duration(minutes: 1));
+      // Provider selection already advances to another source on failure.
+      // Repeating a timed-out scrape several times can otherwise stall playback
+      // for minutes before the next provider is tried.
+      final response = await _get(uri,
+          timeout: const Duration(minutes: 1), retryLimit: 0);
       _logResponse(uri, response);
       final body = _decodeObject(response.data ?? '');
       if ((response.statusCode ?? 0) < 200 ||
@@ -318,14 +332,21 @@ class ScraperApi {
   Future<Response<String>> _get(
     Uri uri, {
     Duration timeout = const Duration(seconds: 20),
+    CancelToken? cancelToken,
+    int? retryLimit,
+    bool useCache = true,
   }) {
     return _dio.get<String>(uri.toString(),
+        cancelToken: cancelToken,
         options: Options(
           responseType: ResponseType.plain,
           receiveTimeout: timeout,
           extra: {
             'cacheScope': 'scraper',
-            'cachePolicy': CachePolicies.forUrl(uri, scope: 'scraper')
+            'cachePolicy': useCache
+                ? CachePolicies.forUrl(uri, scope: 'scraper')
+                : CachePolicy.noStore,
+            if (retryLimit != null) 'retryLimit': retryLimit,
           },
         ));
   }

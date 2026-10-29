@@ -8,6 +8,7 @@ import '../../functions/language_names.dart';
 import '../../models/app_colors.dart';
 import '../../models/app_mode.dart';
 import '../../models/fastflix_logo.dart';
+import '../../screens/common/connection_settings_screen.dart';
 import '../../screens/common/language_choose.dart' show appLanguageChoices;
 import '../../screens/common/update_screen.dart';
 import '../../functions/subtitle_style.dart';
@@ -170,6 +171,18 @@ class TvSettingsScreen extends StatelessWidget {
             value: tr('tv_choose_source_priority'),
             icon: PhosphorIcons.arrowsDownUp(),
             onActivate: () => showTvProviderOrderDialog(context),
+          ),
+          _TvSettingTile(
+            key: const ValueKey<String>('connection-settings'),
+            label: tr('connection_settings'),
+            value: tr('connection_settings_short'),
+            icon: PhosphorIcons.globe(),
+            onActivate: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    const ConnectionSettingsScreen(television: true),
+              ),
+            ),
           ),
         ];
         final playbackTiles = <Widget>[

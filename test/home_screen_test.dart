@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flixquest/catalog/home_feed_controller.dart';
+import 'package:flixquest/constants/api_constants.dart';
 import 'package:flixquest/catalog/home_hero.dart';
 import 'package:flixquest/catalog/media_item.dart';
 import 'package:flixquest/catalog/up_next.dart';
@@ -82,6 +85,20 @@ class _FakeSource implements HomeFeedSource {
   @override
   Future<List<MediaItem>> genre(MediaKind kind, int genreId) async =>
       _movies([70, 71]);
+}
+
+class _GatedSource extends _FakeSource {
+  final Completer<void> oldRequest = Completer<void>();
+  bool holdOld = true;
+
+  @override
+  Future<List<MediaItem>> list(MediaKind kind, HomeList list) async {
+    if (holdOld) {
+      await oldRequest.future;
+      return const <MediaItem>[];
+    }
+    return super.list(kind, list);
+  }
 }
 
 class _FakeRecent extends ChangeNotifier implements RecentProvider {
@@ -464,6 +481,43 @@ void main() {
     await tester.tap(find.text('retry'));
     await tester.pumpAndSettle();
     expect(find.byType(HeroCarousel), findsOneWidget);
+  });
+
+  testWidgets('Home recovers automatically when a late TMDB key arrives',
+      (tester) async {
+    final source = _FakeSource(true);
+    final dependencies = AppDependencyProvider();
+    addTearDown(() => TMDB_API_KEY = '');
+    await tester.pumpWidget(_app(
+      dependencies: dependencies,
+      child: HomeScreen(source: source, findTint: null, showTitleLogos: false),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('home_load_failed'), findsOneWidget);
+    source.fail = false;
+    dependencies.setRemoteTmdbApiKey('late_key');
+    await tester.pumpAndSettle();
+    expect(find.byType(HeroCarousel), findsOneWidget);
+    expect(find.text('home_load_failed'), findsNothing);
+  });
+
+  testWidgets('an old Home request cannot overwrite a newer configuration',
+      (tester) async {
+    final source = _GatedSource();
+    final dependencies = AppDependencyProvider();
+    await tester.pumpWidget(_app(
+      dependencies: dependencies,
+      child: HomeScreen(source: source, findTint: null, showTitleLogos: false),
+    ));
+    await tester.pump();
+    source.holdOld = false;
+    dependencies.retryContentAfterReconnect();
+    await tester.pumpAndSettle();
+    expect(find.byType(HeroCarousel), findsOneWidget);
+    source.oldRequest.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(HeroCarousel), findsOneWidget);
+    expect(find.text('home_load_failed'), findsNothing);
   });
 
   for (final mode in <String>['dark', 'amoled', 'light']) {

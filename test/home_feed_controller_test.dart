@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flixquest/catalog/home_feed_controller.dart';
@@ -97,7 +98,32 @@ class _FakeSource implements HomeFeedSource {
       const <MediaItem>[];
 }
 
+class _SlowAnimeSource extends _FakeSource {
+  _SlowAnimeSource() : super(lists: {
+          (MediaKind.movie, HomeList.trendingToday): _movies([1]),
+        });
+  final Completer<List<MediaItem>> anime = Completer<List<MediaItem>>();
+
+  @override
+  Future<List<MediaItem>> list(MediaKind kind, HomeList list) =>
+      list == HomeList.animeTrending ? anime.future : super.list(kind, list);
+}
+
 void main() {
+  test('a successful row renders while an optional anime request is slow',
+      () async {
+    final source = _SlowAnimeSource();
+    final partials = <HomeFeed>[];
+    final result = HomeFeedController(source)
+        .load(HomeFilter.movies, onPartial: partials.add);
+    await Future<void>.delayed(Duration.zero);
+    expect(partials, isNotEmpty);
+    expect(partials.last.of(MediaKind.movie).topTen.single.id, 1);
+    expect(partials.last.of(MediaKind.movie).animeTopTen, isEmpty);
+    source.anime.complete(_movies([7]));
+    expect((await result).of(MediaKind.movie).animeTopTen.single.id, 7);
+  });
+
   group('filters', () {
     test('All keeps movies and series in rows of their own', () async {
       final source = _FakeSource(lists: {

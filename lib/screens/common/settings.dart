@@ -15,6 +15,7 @@ import '/provider/app_dependency_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'player_settings.dart';
+import 'connection_settings_screen.dart';
 import 'fastflix_logo_picker.dart';
 import '../../models/fastflix_logo.dart';
 import '../../design/app_palette.dart';
@@ -275,6 +276,16 @@ class _SettingsState extends State<Settings> {
             SettingsGroup(
               title: tr('content_preferences'),
               children: [
+                ListRow(
+                  icon: PhosphorIcons.globe(),
+                  label: tr('connection_settings'),
+                  subtitle: tr('connection_settings_short'),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ConnectionSettingsScreen(),
+                    ),
+                  ),
+                ),
                 ChoiceRow<String>(
                   icon: PhosphorIcons.image(),
                   label: tr('image_quality'),

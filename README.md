@@ -136,6 +136,22 @@ MIXPANEL_API_KEY=
 - **FlixQuest Scraper API**: The scraper service is closed-source. For API access, self-hosting inquiries, or support, please reach out to [flixquestapp@gmail.com](mailto:flixquestapp@gmail.com).
 - **Mixpanel Token** _(Optional)_: Create a free account at [Mixpanel](https://mixpanel.com).
 
+### Configure an installed app
+
+On Android or Android TV, open **Settings → Catalog & providers** to provide a
+public TMDB **v3 API key** and/or the base URL of a reachable, compatible
+FlixQuest Scraper API v2. Home offers the same setup when no catalog key is
+configured. The optional overrides are stored locally **without encryption**;
+never enter passwords, account access tokens, or server/admin secrets. Leave a
+field blank to return to the bundled or remotely configured value. Home reloads
+when its effective configuration changes or the device reconnects. A provider
+URL is an exclusive override; without one, the app tries up to four configured
+instances and keeps the working instance for its streams and size tokens.
+
+This does not create a TMDB key or a scraper service, and it does not configure
+Firebase, the Laravel backend, account/billing features, signing or releases. A
+debug preview still requires real, authorized services to use online features.
+
 ---
 
 ## 🕷️ FlixQuest Scraper API v2

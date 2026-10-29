@@ -4,18 +4,23 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 const String TMDB_API_BASE_URL = 'https://api.themoviedb.org/3';
 String? _remoteTmdbApiKey;
+String? _clientTmdbApiKey;
 
-/// The TMDB API key used across all metadata and search endpoints.
-///
-/// Initially falls back to `dotenv.env['TMDB_API_KEY']` (from the local `.env`).
-/// If a non-empty key is fetched from Firebase Remote Config (`tmdb_api_key`),
-/// it overrides this value at runtime.
-String get TMDB_API_KEY =>
-    _remoteTmdbApiKey ?? dotenv.env['TMDB_API_KEY'] ?? '';
+/// The optional user-supplied public client key takes precedence over remote
+/// and bundled values. It is intentionally separate from account credentials.
+String get TMDB_API_KEY => _clientTmdbApiKey ??
+    _remoteTmdbApiKey ??
+    (dotenv.isInitialized ? dotenv.env['TMDB_API_KEY'] : null) ??
+    '';
 
 set TMDB_API_KEY(String value) {
   final trimmed = value.trim();
   _remoteTmdbApiKey = trimmed.isNotEmpty ? trimmed : null;
+}
+
+void setClientTmdbApiKey(String value) {
+  final trimmed = value.trim();
+  _clientTmdbApiKey = trimmed.isNotEmpty ? trimmed : null;
 }
 String mixpanelKey = dotenv.env['MIXPANEL_API_KEY']!;
 const TMDB_BASE_IMAGE_URL = 'https://image.tmdb.org/t/p/';

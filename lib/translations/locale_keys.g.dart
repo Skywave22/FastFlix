@@ -1939,4 +1939,20 @@ abstract class  LocaleKeys {
   static const public_copy_retry = 'public_copy_retry';
   static const download_delete_cache_description = 'download_delete_cache_description';
 
+  static const connection_settings = 'connection_settings';
+  static const connection_settings_short = 'connection_settings_short';
+  static const connection_settings_description = 'connection_settings_description';
+  static const connection_tmdb_key = 'connection_tmdb_key';
+  static const connection_provider_url = 'connection_provider_url';
+  static const connection_use_default = 'connection_use_default';
+  static const connection_public_settings_warning = 'connection_public_settings_warning';
+  static const connection_invalid_key = 'connection_invalid_key';
+  static const connection_invalid_url = 'connection_invalid_url';
+  static const connection_save_failed = 'connection_save_failed';
+  static const connection_setup_title = 'connection_setup_title';
+  static const connection_setup_message = 'connection_setup_message';
+  static const connection_configure = 'connection_configure';
+  static const connection_provider_error = 'connection_provider_error';
+  static const connection_playback_no_sources = 'connection_playback_no_sources';
+
 }

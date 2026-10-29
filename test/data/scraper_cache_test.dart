@@ -96,22 +96,12 @@ void main() {
       'message': 'Provider unavailable',
       'error': 'legacy'
     }, statusCode: 503);
-    adapter.enqueueJson({
-      'success': false,
-      'message': 'Provider unavailable',
-      'error': 'legacy'
-    }, statusCode: 503);
-    adapter.enqueueJson({
-      'success': false,
-      'message': 'Provider unavailable',
-      'error': 'legacy'
-    }, statusCode: 503);
     expect((await api.loadMovie(providerId: 'vixsrc', movieId: 7)).errorMessage,
         'Provider unavailable');
-    for (var i = 0; i < 3; i++) {
-      adapter.enqueueError(type: DioExceptionType.receiveTimeout);
-    }
+    adapter.enqueueError(type: DioExceptionType.receiveTimeout);
     expect((await api.loadMovie(providerId: 'vixsrc', movieId: 7)).errorMessage,
         'Scraper request timed out');
+    expect(adapter.requests, hasLength(2),
+        reason: 'failed scrapes should advance to the next source, not retry');
   });
 }

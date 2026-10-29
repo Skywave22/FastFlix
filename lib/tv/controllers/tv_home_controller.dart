@@ -1,6 +1,4 @@
-import '../../catalog/catalog_controller.dart';
 import '../../catalog/home_feed_controller.dart';
-import '../../functions/network.dart';
 import '../../provider/app_dependency_provider.dart';
 import '../../provider/settings_provider.dart';
 import '../models/tv_media_item.dart';
@@ -52,85 +50,55 @@ class TvHomeData {
 }
 
 class TvHomeController {
-  const TvHomeController();
+  const TvHomeController({this.source});
+
+  /// Injectable so independent row failures can be tested without a network.
+  final HomeFeedSource? source;
 
   Future<TvHomeData> load({
     required SettingsProvider settings,
     required AppDependencyProvider dependencies,
+    void Function(TvHomeData data)? onPartial,
   }) async {
-    final language = settings.appLanguage;
-    final homeSource = CatalogHomeFeedSource(
+    final homeSource = source ?? CatalogHomeFeedSource(
       settings: settings,
       dependencies: dependencies,
     );
-    Future<List<TvMediaItem>> anime(TvMediaKind kind) => homeSource
-        .list(kind, HomeList.animeTrending)
-        .then(
-          (items) => items.take(10).toList(growable: false),
-          onError: (Object _) => <TvMediaItem>[],
+    final rows = List<List<TvMediaItem>>.generate(
+        8, (_) => const <TvMediaItem>[]);
+    TvHomeData current() => TvHomeData(
+          popularMovies: rows[0],
+          trendingMovies: rows[1],
+          popularSeries: rows[2],
+          trendingSeries: rows[3],
+          topMovies: rows[4],
+          topSeries: rows[5],
+          topAnimeMovies: rows[6],
+          topAnimeSeries: rows[7],
         );
-    final animeMovies = anime(TvMediaKind.movie);
-    final animeSeries = anime(TvMediaKind.series);
-    // The same lists the rows' See all opens.
-    String url(TvMediaKind kind, CatalogList list) =>
-        CatalogController.listUrl(kind, list, language);
-    final popularMoviesFuture = fetchMovies(
-      url(TvMediaKind.movie, CatalogList.popular),
-      settings.enableProxy,
-      dependencies.tmdbProxy,
-    );
-    final trendingMoviesFuture = fetchMovies(
-      url(TvMediaKind.movie, CatalogList.trendingWeek),
-      settings.enableProxy,
-      dependencies.tmdbProxy,
-    );
-    final popularSeriesFuture = fetchTV(
-      url(TvMediaKind.series, CatalogList.popular),
-      settings.enableProxy,
-      dependencies.tmdbProxy,
-    );
-    final trendingSeriesFuture = fetchTV(
-      url(TvMediaKind.series, CatalogList.trendingWeek),
-      settings.enableProxy,
-      dependencies.tmdbProxy,
-    );
+    Future<void> row(int index, TvMediaKind kind, HomeList list,
+        {int? limit}) async {
+      try {
+        final items = await homeSource.list(kind, list);
+        rows[index] = (limit == null ? items : items.take(limit))
+            .toList(growable: false);
+        final partial = current();
+        if (!partial.isEmpty) onPartial?.call(partial);
+      } catch (_) {
+        // A single unavailable list must not take the whole TV Home offline.
+      }
+    }
 
-    // The Top 10 rows are extras: without them the page still stands.
-    final topMoviesFuture = fetchMovies(
-      url(TvMediaKind.movie, CatalogList.trendingToday),
-      settings.enableProxy,
-      dependencies.tmdbProxy,
-    ).then(
-      (items) => items.take(10).map(TvMediaItem.fromMovie).toList(),
-      onError: (Object _) => <TvMediaItem>[],
-    );
-    final topSeriesFuture = fetchTV(
-      url(TvMediaKind.series, CatalogList.trendingToday),
-      settings.enableProxy,
-      dependencies.tmdbProxy,
-    ).then(
-      (items) => items.take(10).map(TvMediaItem.fromSeries).toList(),
-      onError: (Object _) => <TvMediaItem>[],
-    );
-
-    final popularMovies = await popularMoviesFuture;
-    final trendingMovies = await trendingMoviesFuture;
-    final popularSeries = await popularSeriesFuture;
-    final trendingSeries = await trendingSeriesFuture;
-
-    return TvHomeData(
-      popularMovies:
-          popularMovies.map(TvMediaItem.fromMovie).toList(growable: false),
-      trendingMovies:
-          trendingMovies.map(TvMediaItem.fromMovie).toList(growable: false),
-      popularSeries:
-          popularSeries.map(TvMediaItem.fromSeries).toList(growable: false),
-      trendingSeries:
-          trendingSeries.map(TvMediaItem.fromSeries).toList(growable: false),
-      topMovies: await topMoviesFuture,
-      topSeries: await topSeriesFuture,
-      topAnimeMovies: await animeMovies,
-      topAnimeSeries: await animeSeries,
-    );
+    await Future.wait<void>([
+      row(0, TvMediaKind.movie, HomeList.popular),
+      row(1, TvMediaKind.movie, HomeList.trendingWeek),
+      row(2, TvMediaKind.series, HomeList.popular),
+      row(3, TvMediaKind.series, HomeList.trendingWeek),
+      row(4, TvMediaKind.movie, HomeList.trendingToday, limit: 10),
+      row(5, TvMediaKind.series, HomeList.trendingToday, limit: 10),
+      row(6, TvMediaKind.movie, HomeList.animeTrending, limit: 10),
+      row(7, TvMediaKind.series, HomeList.animeTrending, limit: 10),
+    ]);
+    return current();
   }
 }

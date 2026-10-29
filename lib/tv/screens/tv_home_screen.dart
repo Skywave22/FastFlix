@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../../provider/app_dependency_provider.dart';
+import '../../screens/common/connection_settings_screen.dart';
 import '../../screens/common/update_screen.dart';
 import '../../provider/recently_watched_provider.dart';
 import '../../provider/settings_provider.dart';
@@ -47,7 +48,9 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   static const _controller = TvHomeController();
 
   Future<TvHomeData>? _homeData;
+  TvHomeData? _partialData;
   String? _configurationKey;
+  int _loadGeneration = 0;
 
   @override
   void didChangeDependencies() {
@@ -58,25 +61,33 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
       settings.appLanguage,
       settings.enableProxy,
       dependencies.tmdbProxy,
+      dependencies.contentConfigurationRevision,
     ].join('|');
     if (_configurationKey != configurationKey) {
       _configurationKey = configurationKey;
-      _homeData = _controller.load(
-        settings: settings,
-        dependencies: dependencies,
-      );
+      _startLoad(settings, dependencies);
     }
+  }
+
+  void _startLoad(
+      SettingsProvider settings, AppDependencyProvider dependencies) {
+    final generation = ++_loadGeneration;
+    _partialData = null;
+    _homeData = _controller.load(
+      settings: settings,
+      dependencies: dependencies,
+      onPartial: (data) {
+        if (mounted && generation == _loadGeneration) {
+          setState(() => _partialData = data);
+        }
+      },
+    );
   }
 
   void _retry() {
     final settings = context.read<SettingsProvider>();
     final dependencies = context.read<AppDependencyProvider>();
-    setState(() {
-      _homeData = _controller.load(
-        settings: settings,
-        dependencies: dependencies,
-      );
-    });
+    setState(() => _startLoad(settings, dependencies));
   }
 
   @override
@@ -101,21 +112,28 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     ].where((item) => item.id >= 0).take(16).toList(growable: false);
     return FutureBuilder<TvHomeData>(
       future: _homeData,
-      builder: (context, snapshot) => AnimatedSwitcher(
-        // The page fades in over its skeleton rather than cutting to it.
-        duration: const Duration(milliseconds: 280),
-        switchInCurve: Curves.easeOut,
-        child: KeyedSubtree(
-          key: ValueKey<Object>(
-            snapshot.connectionState != ConnectionState.done
-                ? 'loading'
-                : snapshot.hasError
-                    ? 'error'
-                    : snapshot.data?.hero?.stableId ?? 'empty',
+      builder: (context, snapshot) {
+        final partial = _partialData;
+        final shown = snapshot.connectionState != ConnectionState.done &&
+                partial != null
+            ? AsyncSnapshot<TvHomeData>.withData(ConnectionState.done, partial)
+            : snapshot;
+        return AnimatedSwitcher(
+          // The page fades in over its skeleton rather than cutting to it.
+          duration: const Duration(milliseconds: 280),
+          switchInCurve: Curves.easeOut,
+          child: KeyedSubtree(
+            key: ValueKey<Object>(
+              shown.connectionState != ConnectionState.done
+                  ? 'loading'
+                  : shown.hasError
+                      ? 'error'
+                      : shown.data?.hero?.stableId ?? 'empty',
+            ),
+            child: _buildState(shown, insets, continueWatching),
           ),
-          child: _buildState(snapshot, insets, continueWatching),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -124,26 +142,30 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
     EdgeInsets insets,
     List<TvMediaItem> continueWatching,
   ) {
-    if (snapshot.connectionState != ConnectionState.done) {
+    final missingKey = !context.read<AppDependencyProvider>().hasTmdbKey;
+    if (snapshot.connectionState != ConnectionState.done && !missingKey) {
       return TvBrowseSkeleton(metrics: widget.metrics);
     }
-    if (snapshot.hasError) {
-      return Padding(
-        padding: insets,
-        child: TvStatePanel.error(onRetry: _retry),
-      );
-    }
     final data = snapshot.data;
-    if (data == null || data.isEmpty || data.hero == null) {
+    if (snapshot.connectionState != ConnectionState.done || snapshot.hasError ||
+        data == null || data.isEmpty || data.hero == null) {
       return Padding(
         padding: insets,
-        child: TvStatePanel(
-          title: tr('tv_nothing_to_show_yet'),
-          message: tr('tv_flixquest_could_not_find_content_for_this_region'),
-          icon: PhosphorIcons.filmStrip(),
-          actionLabel: tr('retry'),
-          onAction: _retry,
-        ),
+        child: missingKey
+            ? TvStatePanel(
+                title: tr('connection_setup_title'),
+                message: tr('connection_setup_message'),
+                icon: PhosphorIcons.gear(),
+                actionLabel: tr('connection_configure'),
+                onAction: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        const ConnectionSettingsScreen(television: true),
+                  ),
+                ),
+              )
+            : TvStatePanel.error(
+                message: tr('home_load_failed'), onRetry: _retry),
       );
     }
 

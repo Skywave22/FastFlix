@@ -12,17 +12,115 @@ class AppDependencyProvider extends ChangeNotifier {
   final AppDependencies _preferences = AppDependencies();
   final math.Random _random = math.Random();
 
+  String _clientTmdbKey = '';
+  String _clientScraperUrl = '';
+  int _contentConfigurationRevision = 0;
+
+  /// Changes only when effective catalog configuration or connectivity changes,
+  /// so Home can discard stale requests and recover without an app restart.
+  int get contentConfigurationRevision => _contentConfigurationRevision;
+  String get clientTmdbKey => _clientTmdbKey;
+  String get clientScraperUrl => _clientScraperUrl;
+  bool get hasTmdbKey => TMDB_API_KEY.trim().isNotEmpty;
+
+  static bool validClientTmdbKey(String value) {
+    final key = value.trim();
+    return key.isEmpty ||
+        (key.length <= 256 && RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(key));
+  }
+
+  static bool validClientScraperUrl(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return true;
+    final uri = Uri.tryParse(raw);
+    return uri != null &&
+        {'http', 'https'}.contains(uri.scheme) &&
+        uri.host.isNotEmpty &&
+        uri.userInfo.isEmpty &&
+        !uri.hasQuery &&
+        !uri.hasFragment;
+  }
+
+  Future<void> loadClientConnection() async {
+    final saved = _preferences.getClientConnection();
+    final key = (saved['tmdbKey'] ?? '').trim();
+    final url = (saved['scraperUrl'] ?? '').trim();
+    _clientTmdbKey = validClientTmdbKey(key) ? key : '';
+    _clientScraperUrl = validClientScraperUrl(url) ? url : '';
+    setClientTmdbApiKey(_clientTmdbKey);
+    _contentConfigurationRevision++;
+    notifyListeners();
+  }
+
+  Future<void> saveClientConnection({
+    required String tmdbKey,
+    required String scraperUrl,
+  }) async {
+    final key = tmdbKey.trim();
+    final url = scraperUrl.trim().replaceFirst(RegExp(r'/+$'), '');
+    if (!validClientTmdbKey(key) || !validClientScraperUrl(url)) {
+      throw const FormatException('Invalid client connection settings');
+    }
+    await _preferences.setClientConnection(tmdbKey: key, scraperUrl: url);
+    final previousKey = TMDB_API_KEY;
+    final previousClientKey = _clientTmdbKey;
+    final previousUrl = _clientScraperUrl;
+    _clientTmdbKey = key;
+    _clientScraperUrl = url;
+    setClientTmdbApiKey(key);
+    if (previousKey != TMDB_API_KEY ||
+        previousClientKey != key || previousUrl != url) {
+      _contentConfigurationRevision++;
+      notifyListeners();
+    }
+  }
+
+  /// Remote configuration may arrive after Home has already failed. Notify
+  /// only if it changes the effective key; a local override still wins.
+  void setRemoteTmdbApiKey(String value) {
+    final previous = TMDB_API_KEY;
+    TMDB_API_KEY = value;
+    if (previous != TMDB_API_KEY) {
+      _contentConfigurationRevision++;
+      notifyListeners();
+    }
+  }
+
+  void retryContentAfterReconnect() {
+    _contentConfigurationRevision++;
+    notifyListeners();
+  }
+
   List<String> _flixquestApiInstances = const <String>[];
   List<String> get flixquestAPIInstances =>
       List<String>.unmodifiable(_flixquestApiInstances);
 
   String _flixquestAPIUrl = flixquestApiUrl;
-  String get configuredFlixquestAPIURL => _flixquestAPIUrl.trim().isNotEmpty
-      ? _flixquestAPIUrl.trim()
-      : flixquestApiUrl;
+  String get configuredFlixquestAPIURL => _clientScraperUrl.isNotEmpty
+      ? _clientScraperUrl
+      : _flixquestAPIUrl.trim().isNotEmpty
+          ? _flixquestAPIUrl.trim()
+          : flixquestApiUrl;
   String get flixquestAPIURLV2 => configuredFlixquestAPIURL;
 
+  /// An explicit user override is exclusive; otherwise try every published
+  /// instance and finally the legacy/bundled URL. De-duplicate without losing
+  /// the server order, and keep the selected server for its issued tokens.
+  List<String> get scraperApiCandidates {
+    if (_clientScraperUrl.isNotEmpty) return [_clientScraperUrl];
+    final seen = <String>{};
+    return [
+      ..._flixquestApiInstances,
+      _flixquestAPIUrl,
+      flixquestApiUrl,
+    ]
+        .map((url) => url.trim().replaceFirst(RegExp(r'/+$'), ''))
+        .where((url) => url.isNotEmpty && seen.add(url))
+        .toList(growable: false);
+  }
+
   String get flixquestAPIURL {
+    if (_clientScraperUrl.isNotEmpty) return _clientScraperUrl;
     if (_flixquestApiInstances.isNotEmpty) {
       if (_flixquestApiInstances.length == 1) {
         return _flixquestApiInstances.first;

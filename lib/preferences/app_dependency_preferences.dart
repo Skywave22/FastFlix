@@ -15,6 +15,36 @@ class AppDependencies {
   static const OCCASIONAL_THEME_ENABLED = 'occasionalThemeEnabled';
   static const OCCASIONAL_EFFECTS_ENABLED = 'occasionalEffectsEnabled';
   static const AMBIENT_MODE_ENABLED = 'ambientModeEnabled';
+  static const CLIENT_CONNECTION = 'client_connection_v1';
+
+  Map<String, String> getClientConnection() {
+    try {
+      final raw = sharedPrefsSingleton.getString(CLIENT_CONNECTION);
+      final decoded = raw == null ? null : jsonDecode(raw);
+      if (decoded is Map) {
+        final key = decoded['tmdbKey'];
+        final url = decoded['scraperUrl'];
+        return {
+          'tmdbKey': key is String ? key : '',
+          'scraperUrl': url is String ? url : '',
+        };
+      }
+    } catch (_) {
+      // Ignore an invalid persisted override and use the bundled defaults.
+    }
+    return const {};
+  }
+
+  Future<void> setClientConnection({
+    required String tmdbKey,
+    required String scraperUrl,
+  }) async {
+    final saved = await sharedPrefsSingleton.setString(
+      CLIENT_CONNECTION,
+      jsonEncode({'tmdbKey': tmdbKey, 'scraperUrl': scraperUrl}),
+    );
+    if (!saved) throw StateError('Could not save client connection');
+  }
 
   Future<void> setFlixQuestUrl(String value) async {
     await sharedPrefsSingleton.setString(FLIXQUEST_LOGO_URL, value);
