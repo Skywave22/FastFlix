@@ -248,7 +248,7 @@ class _Intro extends StatelessWidget {
           height: 92,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppLogo.artworkPlate,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Hero(

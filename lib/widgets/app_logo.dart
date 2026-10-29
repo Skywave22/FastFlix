@@ -20,6 +20,9 @@ bool isValidRemoteLogoSvg(String source) {
 /// Shows the user's selected FastFlix artwork, rather than replacing it with
 /// an upstream branding URL. Compact placements use the matching symbol.
 class AppLogo extends StatelessWidget {
+  /// The supplied wordmarks contain white lettering and need a dark plate.
+  static const artworkPlate = Color(0xff141418);
+
   const AppLogo({
     super.key,
     this.width,

@@ -353,7 +353,7 @@ class _TvLandingIntro extends StatelessWidget {
           height: compact ? 82 : 104,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppLogo.artworkPlate,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white24),
             boxShadow: <BoxShadow>[

@@ -189,6 +189,7 @@ jobs:
             test/tmdb_connectivity_test.dart \
             test/tmdb_proxy_search_test.dart \
             test/fastflix_preferences_test.dart \
+            test/app_logo_test.dart \
             test/hindi_source_priority_test.dart \
             test/manifest_size_estimator_test.dart \
             test/offline_download_test.dart \
