@@ -39,6 +39,16 @@ class AndroidBrandingTest(unittest.TestCase):
         self.assertIn("package='" + PACKAGE + "'", smoke)
         self.assertIn(PACKAGE + '.FlixQuestOriginalIcon', smoke)
 
+    def test_restored_widget_dimensions_are_resolved(self):
+        res = ROOT / 'android/app/src/main/res'
+        dimensions = {
+            node.get('name')
+            for path in res.glob('values*/dimens.xml')
+            for node in ET.parse(path).getroot().findall('dimen')
+        }
+        widget = (ROOT / 'android/app/src/main/kotlin/dev/beamlak/flixquest_v2/widgets/FlixQuestWidgetProviders.kt').read_text()
+        self.assertTrue(set(re.findall(r'R\.dimen\.(\w+)', widget)) <= dimensions)
+
     def test_all_optional_launcher_artwork_has_resources(self):
         res = ROOT / 'android/app/src/main/res'
         for choice in ('play', 'wing', 'f'):

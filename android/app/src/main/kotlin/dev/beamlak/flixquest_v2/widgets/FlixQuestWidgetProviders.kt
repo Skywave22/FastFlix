@@ -272,7 +272,7 @@ abstract class FlixQuestWidgetProvider : HomeWidgetProvider() {
             fun stackHeight(): Int {
                 val kicker = maxOf(
                     eyebrow?.height ?: 0,
-                    res.getDimensionPixelSize(R.dimen.widget_mark_height),
+                    (res.getDimension(R.dimen.widget_mark_width) * 431f / 277f).roundToInt(),
                 )
                 val gap = (5 * density).roundToInt()
                 return kicker +
