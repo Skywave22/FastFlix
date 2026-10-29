@@ -127,10 +127,10 @@ flutter:
         - asset: assets/fonts/imdb.ttf
 
 flutter_native_splash:
-  color: "#09090C"
-  color_dark: "#09090C"
+  color: "#FFFFFF"
+  color_dark: "#161716"
   image: assets/images/splash_logo.png
   android_12:
     image: assets/images/splash_logo.png
-    color: "#09090C"
-    color_dark: "#09090C"
+    color: "#FFFFFF"
+    color_dark: "#161716"

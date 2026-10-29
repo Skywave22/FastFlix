@@ -75,7 +75,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: python3 .github/scripts/prepare_android_release.py
 
-      - name: Validate Firebase registration for the new package
+      - name: Validate Firebase registration for the original package
         if: ${{ steps.build_mode.outputs.mode == 'release' }}
         env:
           FIREBASE_ANDROID_CONFIG: ${{ secrets.FIREBASE_ANDROID_CONFIG }}
@@ -118,13 +118,13 @@ jobs:
             echo "::notice::$label reachability from CI: $status (no credentials sent)"
           done
 
-      - name: Reuse preview-only debug signing key when cached
+      - name: Restore preview-only debug signing key
         if: ${{ steps.build_mode.outputs.mode == 'preview' }}
         id: preview_debug_signing
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
-          path: ~/.android/debug.keystore
-          key: fastflix-preview-debug-signing-v1
+          path: ${{ github.workspace }}/.flixquest-preview/debug.keystore
+          key: flixquest-preview-debug-signing-v1
 
       - name: Report preview signing continuity
         if: ${{ steps.build_mode.outputs.mode == 'preview' }}
@@ -142,6 +142,27 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Prepare preview-only signing key
+        if: ${{ steps.build_mode.outputs.mode == 'preview' }}
+        run: |
+          key="$GITHUB_WORKSPACE/.flixquest-preview/debug.keystore"
+          mkdir -p "$(dirname "$key")"
+          if [[ ! -s "$key" ]]; then
+            keytool -genkeypair -keystore "$key" -storepass android \
+              -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname 'CN=Android Debug,O=Android,C=US' >/dev/null 2>&1
+          fi
+          keytool -list -keystore "$key" -storepass android -alias androiddebugkey >/dev/null
+          echo "FLIXQUEST_PREVIEW_KEYSTORE=$key" >> "$GITHUB_ENV"
+
+      - name: Cache preview-only signing key
+        if: ${{ steps.build_mode.outputs.mode == 'preview' && steps.preview_debug_signing.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ github.workspace }}/.flixquest-preview/debug.keystore
+          key: flixquest-preview-debug-signing-v1
 
       - name: Verify signing keystore and alias
         if: ${{ steps.build_mode.outputs.mode == 'release' }}
@@ -215,7 +236,7 @@ jobs:
         run: |
           flutter build apk --release --flavor prod --no-pub
           mkdir -p release-apks
-          cp build/app/outputs/flutter-apk/app-prod-release.apk release-apks/FastFlix-universal.apk
+          cp build/app/outputs/flutter-apk/app-prod-release.apk release-apks/FlixQuest-universal.apk
 
       - name: Build debug preview APK
         if: ${{ steps.build_mode.outputs.mode == 'preview' }}
@@ -229,7 +250,7 @@ jobs:
             exit "$build_status"
           fi
           mkdir -p release-apks
-          cp build/app/outputs/flutter-apk/app-prod-debug.apk release-apks/FastFlix-preview-debug.apk
+          cp build/app/outputs/flutter-apk/app-prod-debug.apk release-apks/FlixQuest-preview-debug.apk
           cat > release-apks/README-preview.txt <<'EOF'
           This is a debug preview, not a production release.
           It uses example defaults unless public-client configuration is supplied at
@@ -240,7 +261,7 @@ jobs:
           the Laravel backend. Values entered there are stored locally without
           encryption; never enter passwords, access tokens, or server/admin secrets.
           Its deliberately invalid Firebase options do not register the app; Firebase
-          services cannot work until the new package is registered in Firebase.
+          services cannot work without a real Firebase configuration for this package.
           Its preview-only debug signing key is cached on a best-effort basis and
           may change when the cache expires. It cannot update an installation signed
           by a different key. Do not distribute it as a production release.
@@ -268,7 +289,7 @@ jobs:
         run: |
           flutter build apk --release --flavor prod --split-per-abi --no-pub
           for abi in armeabi-v7a arm64-v8a x86_64; do
-            cp "build/app/outputs/flutter-apk/app-${abi}-prod-release.apk" "release-apks/FastFlix-${abi}.apk"
+            cp "build/app/outputs/flutter-apk/app-${abi}-prod-release.apk" "release-apks/FlixQuest-${abi}.apk"
           done
 
       - name: Verify signatures and generate checksums
@@ -276,12 +297,23 @@ jobs:
           for apk in release-apks/*.apk; do
             "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
           done
+          if [[ -n "${FLIXQUEST_PREVIEW_KEYSTORE:-}" ]]; then
+            expected="$(keytool -exportcert -keystore "$FLIXQUEST_PREVIEW_KEYSTORE" \
+              -storepass android -alias androiddebugkey | sha256sum | cut -d ' ' -f1)"
+            actual="$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs \
+              release-apks/FlixQuest-preview-debug.apk | \
+              sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+            if [[ -z "$actual" || "${actual,,}" != "${expected,,}" ]]; then
+              echo '::error::Preview APK was not signed by the prepared debug key.'
+              exit 1
+            fi
+          fi
           (cd release-apks && sha256sum ./*.apk > SHA256SUMS.txt)
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.build_mode.outputs.mode == 'release' && 'FastFlix-android-apks' || 'FastFlix-preview-debug-apk' }}
+          name: ${{ steps.build_mode.outputs.mode == 'release' && 'FlixQuest-android-apks' || 'FlixQuest-preview-debug-apk' }}
           path: FastFlix/release-apks/
           if-no-files-found: error
           compression-level: 0
@@ -345,7 +377,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v7
         with:
-          name: FastFlix-preview-debug-apk
+          name: FlixQuest-preview-debug-apk
           path: preview
       - name: Enable emulator acceleration
         run: |
@@ -360,12 +392,12 @@ jobs:
           target: google_apis
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: bash .github/scripts/android_preview_smoke.sh preview/FastFlix-preview-debug.apk
+          script: bash .github/scripts/android_preview_smoke.sh preview/FlixQuest-preview-debug.apk
       - name: Upload startup diagnostics on failure
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
-          name: FastFlix-preview-startup-diagnostics
-          path: ${{ runner.temp }}/fastflix-smoke/
+          name: FlixQuest-preview-startup-diagnostics
+          path: ${{ runner.temp }}/flixquest-smoke/
           if-no-files-found: ignore
           retention-days: 7

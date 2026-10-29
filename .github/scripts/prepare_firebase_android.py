@@ -2,8 +2,7 @@
 """Prepare variant-scoped Firebase options without pretending preview is registered.
 
 The debug-only placeholder cannot service Firebase. Release builds require a
-real google-services.json for the new application ID; never derive one by
-editing the old package registration.
+real google-services.json for the original application ID and a project the builder is authorized to use.
 """
 import json
 import os
@@ -11,7 +10,7 @@ from pathlib import Path
 import re
 import sys
 
-PACKAGE = "io.github.skywave22.fastflix"
+PACKAGE = "dev.beamlak.flixquest_v2"
 
 
 def validate(contents: str) -> None:
@@ -41,10 +40,10 @@ def validate(contents: str) -> None:
 
 
 def preview_config() -> dict:
-    # Deliberately fake, isolated from the old project's credentials. Only the
+    # Deliberately fake, isolated from any real project credentials. Only the
     # prod/debug source set can see it; it is never accepted for production.
     return {
-        "project_info": {"project_number": "0", "project_id": "fastflix-preview-invalid", "storage_bucket": "fastflix-preview.invalid"},
+        "project_info": {"project_number": "0", "project_id": "flixquest-preview-invalid", "storage_bucket": "flixquest-preview.invalid"},
         "client": [{
             "client_info": {"mobilesdk_app_id": "1:0:android:0000000000000000", "android_client_info": {"package_name": PACKAGE}},
             "oauth_client": [],

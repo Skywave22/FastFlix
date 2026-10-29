@@ -136,9 +136,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('TV remote previews and saves the selected FastFlix logo',
+  testWidgets('TV remote previews and saves the selected FlixQuest logo',
       (tester) async {
-    const branding = MethodChannel('io.github.skywave22.fastflix/branding');
+    const branding = MethodChannel('dev.beamlak.flixquest_v2/branding');
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     try {
       final calls = <MethodCall>[];
@@ -153,11 +153,11 @@ void main() {
       final settings = SettingsProvider();
       addTearDown(settings.dispose);
       await _pumpSettings(tester, settings);
-      expect(settings.fastFlixLogo, FastFlixLogo.play);
+      expect(settings.fastFlixLogo, FastFlixLogo.original);
 
       await _focusLabel(tester, 'App logo');
       await _select(tester);
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Play');
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Original FlixQuest');
       for (final logo in FastFlixLogo.values) {
         expect(
           find.byWidgetPredicate((widget) =>
@@ -167,6 +167,7 @@ void main() {
           findsOneWidget,
         );
       }
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await _select(tester);
       expect(settings.fastFlixLogo, FastFlixLogo.wing);
@@ -196,7 +197,7 @@ void main() {
       'PLAYBACK',
       'SUBTITLES',
       'STORAGE',
-      'ABOUT FASTFLIX',
+      'ABOUT FLIXQUEST',
     ];
     for (var index = 1; index < headings.length; index++) {
       expect(tester.getTopLeft(find.text(headings[index])).dy,

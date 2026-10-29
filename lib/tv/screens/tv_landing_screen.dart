@@ -353,7 +353,7 @@ class _TvLandingIntro extends StatelessWidget {
           height: compact ? 82 : 104,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppLogo.artworkPlate,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white24),
             boxShadow: <BoxShadow>[
@@ -368,7 +368,7 @@ class _TvLandingIntro extends StatelessWidget {
         ),
         SizedBox(height: compact ? 22 : 30),
         Text(
-          'FastFlix TV',
+          'FlixQuest TV',
           style: TextStyle(
             color: palette.foreground,
             fontFamily: 'FigtreeBold',

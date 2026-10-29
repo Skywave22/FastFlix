@@ -531,7 +531,7 @@ class StreamDownloadStore private constructor(context: Context) {
                 // segment takes longer than Media3's short defaults.
                 .setConnectTimeoutMs(20_000)
                 .setReadTimeoutMs(30_000)
-                .setUserAgent("FastFlix/4.0")
+                .setUserAgent("FlixQuest/4.0")
                 .setDefaultRequestProperties(headers)
 
         /** HLS segments can arrive hidden in images; unwrap them before caching, as the player does. */

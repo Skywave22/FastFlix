@@ -12,6 +12,7 @@ class FastFlixLogoPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final labels = <FastFlixLogo, String>{
+      FastFlixLogo.original: tr('logo_original'),
       FastFlixLogo.play: tr('logo_play'),
       FastFlixLogo.wing: tr('logo_wing'),
       FastFlixLogo.f: tr('logo_f'),

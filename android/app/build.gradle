@@ -55,7 +55,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "io.github.skywave22.fastflix"
+        applicationId "dev.beamlak.flixquest_v2"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
@@ -67,17 +67,28 @@ android {
     productFlavors {
         prod {
             dimension "environment"
-            manifestPlaceholders = [appLabel: "FastFlix"]
+            manifestPlaceholders = [appLabel: "FlixQuest"]
         }
         dev {
             dimension "environment"
             // Reuse the registered Firebase package; a suffix would require
             // another Firebase Android app and matching Google services file.
-            manifestPlaceholders = [appLabel: "FastFlix Dev"]
+            manifestPlaceholders = [appLabel: "FlixQuest Dev"]
         }
     }
 
     signingConfigs {
+       debug {
+           // CI previews may supply a reusable, explicitly non-production key.
+           // Local debug builds keep the Android Gradle plugin's default key.
+           def previewKey = System.getenv('FLIXQUEST_PREVIEW_KEYSTORE')
+           if (previewKey) {
+               storeFile file(previewKey)
+               storePassword 'android'
+               keyAlias 'androiddebugkey'
+               keyPassword 'android'
+           }
+       }
        release {
            keyAlias keystoreProperties['keyAlias']
            keyPassword keystoreProperties['keyPassword']

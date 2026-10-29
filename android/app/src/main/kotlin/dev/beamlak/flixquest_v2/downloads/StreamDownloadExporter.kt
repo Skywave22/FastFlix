@@ -232,13 +232,13 @@ class StreamDownloadExporter(
             return StreamDownloadExportException(
                 code = "EXPORT_UNSUPPORTED",
                 message = "This video can't be converted for other players. " +
-                    "You can still watch it in FastFlix.",
+                    "You can still watch it in FlixQuest.",
                 cause = error,
             )
         }
         return StreamDownloadExportException(
             code = "EXPORT_FAILED",
-            message = "Could not prepare this video. You can still watch it in FastFlix.",
+            message = "Could not prepare this video. You can still watch it in FlixQuest.",
             cause = error,
         )
     }
@@ -249,11 +249,11 @@ class StreamDownloadExporter(
 
     private fun outputFile(download: Download): File {
         val metadata = StreamDownloadStore.requestMetadata(download.request)
-        val title = metadata.optString("title", "FastFlix video")
+        val title = metadata.optString("title", "FlixQuest video")
             .replace(Regex("[^a-zA-Z0-9._ -]"), "_")
             .trim(' ', '.')
             .take(80)
-            .ifBlank { "FastFlix video" }
+            .ifBlank { "FlixQuest video" }
         val suffix = Integer.toHexString(download.request.id.hashCode())
         return File(exportDirectory, "$title-$suffix.mp4")
     }

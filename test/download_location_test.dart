@@ -25,7 +25,7 @@ void main() {
           return switch (call.method) {
             'getDownloadLocation' || 'resetDownloadLocation' => {
               'isDefault': true,
-              'label': 'Downloads/FastFlix',
+              'label': 'Downloads/FlixQuest',
             },
             'chooseDownloadLocation' => {
               'isDefault': false,
@@ -45,13 +45,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Downloads/FastFlix'), findsOneWidget);
+    expect(find.text('Downloads/FlixQuest'), findsOneWidget);
     await tester.tap(find.byKey(const Key('choose_download_location')));
     await tester.pumpAndSettle();
     expect(find.text('My SD card'), findsOneWidget);
     await tester.tap(find.byKey(const Key('reset_download_location')));
     await tester.pumpAndSettle();
-    expect(find.text('Downloads/FastFlix'), findsOneWidget);
+    expect(find.text('Downloads/FlixQuest'), findsOneWidget);
     expect(calls, [
       'getDownloadLocation',
       'chooseDownloadLocation',

@@ -151,7 +151,7 @@ class TvNavigationRailState extends State<TvNavigationRail> {
                     child: _Label(
                       visible: expanded,
                       child: Text(
-                        'FASTFLIX',
+                        'FLIXQUEST',
                         style: TextStyle(
                           color: colors.primary,
                           fontFamily: 'FigtreeBold',

@@ -46,7 +46,7 @@ private const val HOME_DEEP_LINK = "flixquest://home"
  * The only copy that lives on this side of the bridge: it shows when the app has never filled the
  * widget in. Every other string is written by [HomeWidgetService] so it exists in exactly one place.
  */
-private const val SYNC_TITLE = "Open FastFlix"
+private const val SYNC_TITLE = "Open FlixQuest"
 private const val SYNC_SUBTITLE = "Tap to sync this widget"
 
 /** The app hero card's text over artwork: white, its facts line at 85%. */

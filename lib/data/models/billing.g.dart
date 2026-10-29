@@ -9,7 +9,7 @@ part of 'billing.dart';
 _$PlusPlanImpl _$$PlusPlanImplFromJson(Map<String, dynamic> json) =>
     _$PlusPlanImpl(
       code: json['code'] as String,
-      name: json['name'] as String? ?? 'FastFlix Plus',
+      name: json['name'] as String? ?? 'FlixQuest Plus',
       amountCents: (json['amount_cents'] as num).toInt(),
       currency: json['currency'] as String? ?? 'USD',
       intervalDays: (json['interval_days'] as num).toInt(),

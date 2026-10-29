@@ -7,7 +7,7 @@ import unittest
 
 
 SCRIPT = Path(__file__).with_name('android_preview_smoke.sh')
-PACKAGE = 'io.github.skywave22.fastflix'
+PACKAGE = 'dev.beamlak.flixquest_v2'
 
 
 class PreviewSmokeTests(unittest.TestCase):
@@ -55,7 +55,7 @@ elif args[:2] == ['logcat', '-d']:
 
     def test_grants_notification_permission_before_checking_app_content(self):
         result, calls = self.run_probe(
-            f'<hierarchy><node package="{PACKAGE}" content-desc="FastFlix"/></hierarchy>'
+            f'<hierarchy><node package="{PACKAGE}" content-desc="FlixQuest"/></hierarchy>'
         )
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertIn('reached accessible Android app content', result.stdout)
@@ -79,7 +79,7 @@ elif args[:2] == ['logcat', '-d']:
 
     def test_fatal_error_is_reported_even_if_app_content_was_visible(self):
         result, _ = self.run_probe(
-            f'<hierarchy><node package="{PACKAGE}" text="FastFlix"/></hierarchy>',
+            f'<hierarchy><node package="{PACKAGE}" text="FlixQuest"/></hierarchy>',
             logs='FATAL EXCEPTION: main',
         )
         self.assertNotEqual(result.returncode, 0)

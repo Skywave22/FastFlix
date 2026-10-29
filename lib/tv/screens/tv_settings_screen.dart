@@ -409,6 +409,7 @@ class TvSettingsScreen extends StatelessWidget {
   }
 
   static String _logoLabel(FastFlixLogo logo) => tr(switch (logo) {
+        FastFlixLogo.original => 'logo_original',
         FastFlixLogo.play => 'logo_play',
         FastFlixLogo.wing => 'logo_wing',
         FastFlixLogo.f => 'logo_f',
@@ -593,7 +594,7 @@ class TvSettingsScreen extends StatelessWidget {
   }
 
   static String _colorThemeLabel(int index) => switch (index) {
-        -1 => 'FastFlix',
+        -1 => 'FlixQuest',
         AppColor.customIndex => tr('tv_custom'),
         1 => tr('tv_indigo'),
         2 => tr('tv_pink'),
@@ -615,7 +616,7 @@ class TvSettingsScreen extends StatelessWidget {
         18 => tr('tv_fuchsia'),
         19 => tr('tv_deep_emerald'),
         20 => tr('tv_coral'),
-        _ => 'FastFlix',
+        _ => 'FlixQuest',
       };
 
   static Future<void> _showThemeModePicker(

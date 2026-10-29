@@ -21,7 +21,7 @@ internal class PublicDownloadSettings(context: Context) {
     fun setTreeUri(uri: String) { prefs.edit().putString("tree_uri", uri).apply() }
     fun locationMap(): Map<String, Any> = mapOf(
         "isDefault" to treeUri().isEmpty(),
-        "label" to if (treeUri().isEmpty()) "Downloads/FastFlix" else locationLabel(treeUri()),
+        "label" to if (treeUri().isEmpty()) "Downloads/FlixQuest" else locationLabel(treeUri()),
     )
 
     private fun locationLabel(value: String): String = try {
@@ -48,9 +48,9 @@ internal object PublicDownloadNames {
         val title = safe(metadata.optString("title", "Video"))
         val id = metadata.optInt("contentId").takeIf { it > 0 }
         return if (metadata.optString("mediaType") == "episode") {
-            listOf("FastFlix", "Series", if (id != null) "$title ($id)" else title)
+            listOf("FlixQuest", "Series", if (id != null) "$title ($id)" else title)
         } else {
-            listOf("FastFlix", "Movies")
+            listOf("FlixQuest", "Movies")
         }
     }
 
@@ -83,7 +83,7 @@ internal class PublicDownloadDestination(private val context: Context) {
         for (part in folders) {
             directory = directory.findFile(part) ?: directory.createDirectory(part)
                 ?: throw IOException("Cannot create a folder in the selected location. Choose another folder.")
-            if (!directory.isDirectory) throw IOException("A file is blocking the FastFlix folder.")
+            if (!directory.isDirectory) throw IOException("A file is blocking the FlixQuest folder.")
         }
         val unique = uniqueName(name) { directory.findFile(it) != null }
         val output = directory.createFile("video/mp4", unique)

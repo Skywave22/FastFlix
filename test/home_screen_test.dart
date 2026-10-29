@@ -547,14 +547,7 @@ void main() {
           .map((text) => text.data);
       expect(accentTexts, isEmpty);
       expect(find.text('CONTINUE_WATCHING'), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byType(HeroCard),
-          matching: find.byWidgetPredicate((widget) =>
-              widget is Image && widget.semanticLabel == 'FastFlix'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('FLIXQUEST'), findsOneWidget);
       final accentIcons = tester
           .widgetList<Icon>(find.byType(Icon))
           .where((icon) => icon.color == accent);

@@ -170,6 +170,7 @@ class _SettingsState extends State<Settings> {
                   icon: PhosphorIcons.imageSquare(),
                   label: tr('choose_app_logo'),
                   value: tr(switch (settingsValues.fastFlixLogo) {
+                    FastFlixLogo.original => 'logo_original',
                     FastFlixLogo.play => 'logo_play',
                     FastFlixLogo.wing => 'logo_wing',
                     FastFlixLogo.f => 'logo_f',

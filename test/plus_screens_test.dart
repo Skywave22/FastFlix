@@ -259,7 +259,7 @@ void main() {
             size: size, textScale: scale);
 
         expect(tester.takeException(), isNull);
-        expect(find.text('FastFlix Plus'), findsWidgets);
+        expect(find.text('FlixQuest Plus'), findsWidgets);
         await done(tester);
       });
     }

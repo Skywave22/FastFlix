@@ -1,5 +1,10 @@
-/// Bundled logo designs supplied for FastFlix. The play mark is the default.
+/// The upstream FlixQuest mark is the default; supplied alternatives remain optional.
 enum FastFlixLogo {
+  original(
+    'original',
+    'assets/images/logo.png',
+    'assets/images/logo.png',
+  ),
   play(
     'play',
     'assets/images/fastflix/mark_play.png',
@@ -24,6 +29,6 @@ enum FastFlixLogo {
 
   static FastFlixLogo fromId(String? id) => FastFlixLogo.values.firstWhere(
     (logo) => logo.id == id,
-    orElse: () => FastFlixLogo.play,
+    orElse: () => FastFlixLogo.original,
   );
 }

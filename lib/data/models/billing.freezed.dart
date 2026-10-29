@@ -176,7 +176,7 @@ class __$$PlusPlanImplCopyWithImpl<$Res>
 class _$PlusPlanImpl implements _PlusPlan {
   const _$PlusPlanImpl(
       {required this.code,
-      this.name = 'FastFlix Plus',
+      this.name = 'FlixQuest Plus',
       @JsonKey(name: 'amount_cents') required this.amountCents,
       this.currency = 'USD',
       @JsonKey(name: 'interval_days') required this.intervalDays,

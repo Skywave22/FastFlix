@@ -34,7 +34,7 @@ class SettingsProvider with ChangeNotifier {
 
   final SettingsPreferences _settingsPreferences = SettingsPreferences();
 
-  FastFlixLogo _fastFlixLogo = FastFlixLogo.play;
+  FastFlixLogo _fastFlixLogo = FastFlixLogo.original;
   FastFlixLogo get fastFlixLogo => _fastFlixLogo;
 
   Future<void> getFastFlixLogo() async {
@@ -51,7 +51,7 @@ class SettingsProvider with ChangeNotifier {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       try {
         await const MethodChannel(
-          'io.github.skywave22.fastflix/branding',
+          'dev.beamlak.flixquest_v2/branding',
         ).invokeMethod<void>('setLogo', {'logo': logo.id});
       } on PlatformException {
         launcherUpdated = false;

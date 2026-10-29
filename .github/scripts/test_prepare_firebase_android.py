@@ -24,7 +24,7 @@ def example_config(package=PACKAGE):
 class FirebaseConfigTest(unittest.TestCase):
     def test_package_and_preview_are_rejected(self):
         validate(json.dumps(example_config()))
-        for candidate in (preview_config(), example_config("dev.beamlak.flixquest_v2"), {}, "not-json"):
+        for candidate in (preview_config(), example_config("io.github.skywave22.fastflix"), {}, "not-json"):
             with self.subTest(candidate=candidate), self.assertRaises(ValueError):
                 validate(candidate if isinstance(candidate, str) else json.dumps(candidate))
 

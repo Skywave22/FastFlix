@@ -728,7 +728,7 @@ class _HomeHeader extends StatelessWidget {
                     fit: FlexFit.tight,
                     child: Semantics(
                       header: true,
-                      label: 'FastFlix',
+                      label: 'FlixQuest',
                       excludeSemantics: true,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -747,7 +747,7 @@ class _HomeHeader extends StatelessWidget {
                               fit: BoxFit.scaleDown,
                               alignment: AlignmentDirectional.centerStart,
                               child: Text(
-                                'FASTFLIX',
+                                'FLIXQUEST',
                                 textScaler: TextScaler.noScaling,
                                 style: TextStyle(
                                   color: palette.foreground,

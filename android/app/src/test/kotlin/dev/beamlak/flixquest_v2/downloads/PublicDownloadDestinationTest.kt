@@ -22,11 +22,11 @@ class PublicDownloadDestinationTest {
 
     @Test fun organizesMoviesAndEpisodesWithoutPathTraversal() {
         val movie = JSONObject().put("title", "My / Film").put("mediaType", "movie").put("contentId", 42)
-        assertEquals(listOf("FastFlix", "Movies"), PublicDownloadNames.folder(movie))
+        assertEquals(listOf("FlixQuest", "Movies"), PublicDownloadNames.folder(movie))
         assertEquals("My _ Film (42).mp4", PublicDownloadNames.fileName(movie))
         val episode = JSONObject().put("title", "हिंदी शो").put("mediaType", "episode")
             .put("contentId", 7).put("seasonNumber", 2).put("episodeNumber", 5)
-        assertEquals(listOf("FastFlix", "Series", "हिंदी शो (7)"), PublicDownloadNames.folder(episode))
+        assertEquals(listOf("FlixQuest", "Series", "हिंदी शो (7)"), PublicDownloadNames.folder(episode))
         assertEquals("S02E05.mp4", PublicDownloadNames.fileName(episode))
         assertEquals("Video", PublicDownloadNames.safe("..."))
         assertFalse(PublicDownloadNames.safe("../unsafe").contains('/'))

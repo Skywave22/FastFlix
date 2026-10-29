@@ -12,7 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  const channel = MethodChannel('io.github.skywave22.fastflix/branding');
+  const channel = MethodChannel('dev.beamlak.flixquest_v2/branding');
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -28,7 +28,7 @@ void main() {
   });
 
   test(
-    'third logo is default and changes survive restart and notify Android',
+    'original FlixQuest is default and optional choices persist and notify Android',
     () async {
       final calls = <MethodCall>[];
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -39,7 +39,7 @@ void main() {
       final settings = SettingsProvider();
       addTearDown(settings.dispose);
       await settings.getFastFlixLogo();
-      expect(settings.fastFlixLogo, FastFlixLogo.play);
+      expect(settings.fastFlixLogo, FastFlixLogo.original);
       expect(await settings.setFastFlixLogo(FastFlixLogo.wing), isTrue);
       expect(calls.single.arguments, {'logo': 'wing'});
       final restored = SettingsProvider();
@@ -48,7 +48,7 @@ void main() {
       expect(restored.fastFlixLogo, FastFlixLogo.wing);
       await sharedPrefsSingleton.setString('fastflix_logo', 'invalid');
       await restored.getFastFlixLogo();
-      expect(restored.fastFlixLogo, FastFlixLogo.play);
+      expect(restored.fastFlixLogo, FastFlixLogo.original);
     },
   );
 

@@ -1,8 +1,8 @@
 <p align="center">
-  <img alt="FastFlix" src="assets/images/fastflix/logo_play.png" width="280">
+  <img alt="FlixQuest" src="assets/images/FlixQuest.png" width="180">
 </p>
 
-<h1 align="center">FastFlix</h1>
+<h1 align="center">FlixQuest</h1>
 
 <p align="center">
   <strong>A modern, open-source streaming application for Movies, TV Shows, and Live TV built with Flutter.</strong><br>
@@ -62,7 +62,7 @@
 
 - **Background Downloads**: Download movies and TV episodes from HLS/DASH sources with background management, progress notifications and estimated time remaining. New direct-file downloads are not currently supported.
 - **Advanced download settings**: Choose adaptive-stream segment workers, simultaneous downloads, retries and an unmetered-network requirement. HLS/DASH segments can download in parallel; actual speed depends on the source and connection.
-- **Download location**: New downloads keep an app-private Media3 cache for offline playback and try to create a separate playable MP4 in `Downloads/FastFlix/Movies` or `Downloads/FastFlix/Series/<series name>`. In Downloads → settings, choose another folder (including an SD card) or restore the default. The selection applies to new jobs; retry a failed copy to use the current folder. The private cache, cached remux and public copy consume additional space. Some streams cannot be remuxed; a failed copy is reported without deleting the offline download. Deleting an offline download does not delete its public copy.
+- **Download location**: New downloads keep an app-private Media3 cache for offline playback and try to create a separate playable MP4 in `Downloads/FlixQuest/Movies` or `Downloads/FlixQuest/Series/<series name>`. In Downloads → settings, choose another folder (including an SD card) or restore the default. The selection applies to new jobs; retry a failed copy to use the current folder. The private cache, cached remux and public copy consume additional space. Some streams cannot be remuxed; a failed copy is reported without deleting the offline download. Deleting an offline download does not delete its public copy.
 - **Size estimates**: Qualities show approximate sizes when the provider or stream manifest exposes enough information. If not, the size is unknown; actual video/audio and exported sizes can differ. In-progress totals no longer extrapolate from segment-count percentages.
 - **Player preferences**: Optionally fill the mobile screen (edges can be cropped) and prioritize sources explicitly labeled Hindi. Other sources remain available and metadata may be incomplete.
 - **Trending anime**: Home ranks Japanese-language animation found in up to the first ten pages of weekly TMDB trends, stopping early when it has ten titles. Fewer than ten may be shown; See all pages through the matching weekly-trending movie or series feed, skipping pages without anime.
@@ -76,7 +76,7 @@
 - **Ambient Mode**: Dynamic color palette extraction from movie/show posters and backdrops for an immersive ambient background glow.
 - **Occasional & Seasonal Themes**: Dynamic holiday themes (Christmas, New Year, Halloween, Valentine's Day, Easter, Eid, Diwali, Ethiopian New Year, etc.) with animated vector particle overlays (snow, fireworks, bats, hearts, adey flowers, confetti, stars, sparkles). Configurable via Firebase Remote Config.
 - **Themes**: Light, Dark, AMOLED Pure Black, and Material 3 Dynamic Color palettes.
-- **Logo**: Choose among the three bundled designs in phone or TV settings; the third supplied design is the default. On Android the launcher icon changes too (some launchers may update it later).
+- **Logo**: The original FlixQuest logo is the default. The three supplied alternate designs remain available in phone or TV settings, and Android can change the launcher icon too (some launchers may update it later).
 
 ### 🔐 User Profiles & Cloud Synchronization
 
@@ -114,7 +114,7 @@
 
 ## ⚙️ Environment Variables & API Keys
 
-FastFlix uses `flutter_dotenv` to load environment variables. Create a `.env` file in the root directory of the project:
+FlixQuest uses `flutter_dotenv` to load environment variables. Create a `.env` file in the root directory of the project:
 
 ```env
 # Required: TMDB API Key for movie and TV show metadata
@@ -163,7 +163,7 @@ debug preview still requires real, authorized services to use online features.
 
 ## 🕷️ FlixQuest Scraper API v2
 
-FastFlix communicates with **FlixQuest Scraper API v2** for resolving streaming sources. The backend service is closed-source; please contact [flixquestapp@gmail.com](mailto:flixquestapp@gmail.com) for support or API instance access.
+FlixQuest communicates with **FlixQuest Scraper API v2** for resolving streaming sources. The backend service is closed-source; please contact [flixquestapp@gmail.com](mailto:flixquestapp@gmail.com) for support or API instance access.
 
 The client-side API contract and payload schemas are documented in [`openapi.json`](openapi.json).
 
@@ -182,7 +182,7 @@ Key endpoints consumed by the app:
 
 ## 🔥 Firebase Configuration
 
-FastFlix can use Firebase for several services when configured:
+FlixQuest can use Firebase for several services when configured:
 
 | Service                       | Purpose                                                                                                                                                                                                                             |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -193,7 +193,7 @@ FastFlix can use Firebase for several services when configured:
 | **Firebase In-App Messaging** | Dynamic in-app banners and update notices.                                                                                                                                                                                          |
 | **Firebase Analytics**        | Usage and performance analytics.                                                                                                                                                                                                    |
 
-> **Note**: Register `io.github.skywave22.fastflix` in your Firebase project and use its downloaded `google-services.json`. The tracked root configuration belongs to the old package and cannot register FastFlix. See the release configuration below.
+> **Note**: The original application ID is `dev.beamlak.flixquest_v2`. For a release, register that package and your signing fingerprints in a Firebase project you are authorized to use, then supply its downloaded `google-services.json`. The preview intentionally uses invalid Firebase options.
 
 ---
 
@@ -339,7 +339,7 @@ To build and publish production APKs, configure these repository secrets under
 | `ANDROID_KEY_ALIAS` | The signing key's alias. |
 | `ANDROID_KEY_PASSWORD` | The signing key's password. |
 | `FLIXQUEST_ENV` | Complete multi-line release `.env` contents, based on `.env.example`. |
-| `FIREBASE_ANDROID_CONFIG` | Complete `google-services.json` downloaded after registering `io.github.skywave22.fastflix` as an Android app in the correct Firebase project. |
+| `FIREBASE_ANDROID_CONFIG` | Complete `google-services.json` downloaded after registering `dev.beamlak.flixquest_v2` as an Android app in your Firebase project. |
 
 `FLIXQUEST_ENV` must contain non-empty `TMDB_API_KEY`, `FLIXQUEST_API_URL`, and
 `LARAVEL_API_URL` values, plus a `MIXPANEL_API_KEY` entry (which may be empty).
@@ -348,21 +348,22 @@ entries. Use real, device-reachable HTTP(S) base URLs: the emulator-only `10.0.2
 example is rejected. Add the other public client settings from `.env.example` as
 needed. **Everything in `.env` is bundled into the APK and can be extracted**;
 never put server-side credentials or other private secrets there. The tracked
-`android/app/google-services.json` registers the old package only and cannot be
-used for this application ID. The workflow validates `FIREBASE_ANDROID_CONFIG`
-and writes it to the `prod/release` and `prod/debug` source sets (the latter for
-CI unit tests); editing the old package name in JSON is not a Firebase
-registration. The new application ID installs separately from the old app even
-if signed with the same key. The release keystore and its
-passwords remain private and must be retained for future FastFlix updates.
-Google Sign-In, push notifications, Remote Config, app links and billing may
-also need the new package and signing fingerprint registered in their respective
-services before they work in production.
+`android/app/google-services.json` is upstream's original package registration;
+it does not grant access to its services or authorize a different signing key.
+Use a Firebase project you are authorized to configure. The workflow validates
+`FIREBASE_ANDROID_CONFIG` and writes it to the `prod/release` and `prod/debug`
+source sets (the latter for CI unit tests). The restored application ID installs
+separately from the prior FastFlix package. An existing official FlixQuest app
+with the same ID cannot be updated by a differently signed preview; uninstalling
+it can remove its private data. The release keystore and its passwords remain
+private and must be retained for future updates. Google Sign-In, push
+notifications, Remote Config, app links and billing may require this package
+and its actual signing fingerprint to be registered with their services.
 
 For a local debug-only preview, run `python3 .github/scripts/prepare_firebase_android.py preview`
 after copying `.env.example` to `.env`. This creates invalid Firebase options in
 the ignored `prod/debug` source set only. A local production build must instead
-use a real Firebase configuration for the new package and proper release signing.
+use a real Firebase configuration for this package and proper release signing.
 
 To publish, push a tag beginning with `v` that points to the commit to release.
 The workflow creates a published GitHub release with generated notes if one
@@ -402,7 +403,7 @@ Contributions, feature suggestions, design ideas, and translations are always we
 ## ⚠️ Disclaimer
 
 - The developers of this application have no affiliation with content providers like TMDB, DaddyLive, or any third-party streaming websites.
-- FastFlix **does not host or upload any video content**. All media is retrieved via public scrapers and third-party APIs.
+- FlixQuest **does not host or upload any video content**. All media is retrieved via public scrapers and third-party APIs.
 - In case of copyright infringement, please contact the responsible hosting services or source providers directly.
 
 ---
@@ -426,5 +427,5 @@ Contributions, feature suggestions, design ideas, and translations are always we
 
 <p align="center">
   <i>GNU, but for Entertainment</i><br><br>
-  <strong>FastFlix, based on FlixQuest © 2022–2026</strong>
+  <strong>FlixQuest © 2022–2026</strong>
 </p>

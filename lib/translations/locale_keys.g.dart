@@ -1917,6 +1917,7 @@ abstract class  LocaleKeys {
 
   static const choose_app_logo = 'choose_app_logo';
   static const choose_app_logo_description = 'choose_app_logo_description';
+  static const logo_original = 'logo_original';
   static const logo_play = 'logo_play';
   static const logo_wing = 'logo_wing';
   static const logo_f = 'logo_f';

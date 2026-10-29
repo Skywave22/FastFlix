@@ -10,8 +10,9 @@ import io.flutter.plugin.common.MethodChannel
 /** Changes launcher aliases while leaving the real activity and links intact. */
 class LauncherIconBridge(context: Context, messenger: BinaryMessenger) {
     private val appContext = context.applicationContext
-    private val channel = MethodChannel(messenger, "io.github.skywave22.fastflix/branding")
+    private val channel = MethodChannel(messenger, "dev.beamlak.flixquest_v2/branding")
     private val aliases = mapOf(
+        "original" to "dev.beamlak.flixquest_v2.FlixQuestOriginalIcon",
         "play" to "dev.beamlak.flixquest_v2.FastFlixPlayIcon",
         "wing" to "dev.beamlak.flixquest_v2.FastFlixWingIcon",
         "f" to "dev.beamlak.flixquest_v2.FastFlixFIcon",
@@ -24,7 +25,7 @@ class LauncherIconBridge(context: Context, messenger: BinaryMessenger) {
             } else {
                 val name = aliases[call.argument<String>("logo")]
                 if (name == null) {
-                    result.error("INVALID_LOGO", "Unknown FastFlix logo.", null)
+                    result.error("INVALID_LOGO", "Unknown FlixQuest logo.", null)
                 } else {
                     try {
                         select(name)

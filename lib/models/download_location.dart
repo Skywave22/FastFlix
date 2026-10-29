@@ -9,6 +9,6 @@ class DownloadLocation {
   factory DownloadLocation.fromMap(Map<Object?, Object?> map) =>
       DownloadLocation(
         isDefault: map['isDefault'] != false,
-        label: map['label'] as String? ?? 'Downloads/FastFlix',
+        label: map['label'] as String? ?? 'Downloads/FlixQuest',
       );
 }

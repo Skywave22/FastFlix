@@ -83,13 +83,13 @@ class PublicDownloadWorker(context: Context, params: WorkerParameters) : Worker(
         val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(NotificationChannel(
-                CHANNEL, "FastFlix video copies", NotificationManager.IMPORTANCE_LOW,
+                CHANNEL, "FlixQuest video copies", NotificationManager.IMPORTANCE_LOW,
             ))
         }
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Saving video to your download folder")
-            .setContentText("Preparing a playable FastFlix copy")
+            .setContentText("Preparing a playable FlixQuest copy")
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setProgress(0, 0, true)

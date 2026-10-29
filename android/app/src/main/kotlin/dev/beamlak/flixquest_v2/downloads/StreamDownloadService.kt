@@ -73,7 +73,7 @@ class StreamDownloadService : DownloadService(
             .setContentTitle(heading)
             .setContentText(details)
             .setStyle(NotificationCompat.BigTextStyle().bigText(details))
-            .setSubText("FastFlix downloads")
+            .setSubText("FlixQuest downloads")
             .setContentIntent(pendingIntent)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setPriority(NotificationCompat.PRIORITY_LOW)
