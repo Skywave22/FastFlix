@@ -2051,5 +2051,22 @@
   "connection_setup_message": "इस बिल्ड में TMDB API कुंजी नहीं है। फ़िल्में और सीरीज़ लोड करने के लिए मान्य सार्वजनिक v3 API कुंजी जोड़ें।",
   "connection_configure": "सेटअप करें",
   "connection_provider_error": "प्रदाता सेवा से कनेक्ट नहीं हो सका। कैटलॉग और प्रदाता में URL जाँचें और फिर कोशिश करें। जहाँ समर्थित है वहाँ VixSrc Direct उपलब्ध है।",
-  "connection_playback_no_sources": "कोई वीडियो स्रोत नहीं मिला और प्रदाता सेवा से कनेक्ट नहीं हो सका। सेटिंग में कैटलॉग और प्रदाता जाँचें और फिर कोशिश करें।"
+  "connection_playback_no_sources": "कोई वीडियो स्रोत नहीं मिला और प्रदाता सेवा से कनेक्ट नहीं हो सका। सेटिंग में कैटलॉग और प्रदाता जाँचें और फिर कोशिश करें।",
+  "connection_tmdb_proxy_label": "TMDB HTTPS प्रॉक्सी (वैकल्पिक)",
+  "connection_invalid_proxy": "बिना क्रेडेंशियल, क्वेरी या फ़्रैगमेंट वाला HTTPS प्रॉक्सी URL डालें।",
+  "connection_proxy_warning": "TMDB प्रॉक्सी आपकी API कुंजी देख सकता है। केवल भरोसेमंद और संगत सेवा का उपयोग करें; डिफ़ॉल्ट के लिए खाली छोड़ें।",
+  "connection_test": "कनेक्शन जाँचें",
+  "connection_checking": "कनेक्शन जाँचे जा रहे हैं…",
+  "connection_tmdb_missing": "TMDB: कोई कुंजी सेट नहीं है। अपनी TMDB v3 API कुंजी जोड़ें।",
+  "connection_tmdb_connected": "TMDB: सीधे कनेक्ट हुआ और कुंजी स्वीकार की गई।",
+  "connection_tmdb_proxy_connected": "TMDB: सेट प्रॉक्सी से कनेक्ट हुआ और कुंजी स्वीकार की गई।",
+  "connection_tmdb_rejected": "TMDB ने कुंजी अस्वीकार की। v3 API कुंजी इस्तेमाल करें, लंबा रीड एक्सेस टोकन नहीं।",
+  "connection_tmdb_blocked": "TMDB ब्लॉक लगता है या फ़िल्टर पेज लौटा रहा है। नेटवर्क जाँचें या भरोसेमंद HTTPS TMDB प्रॉक्सी इस्तेमाल करें।",
+  "connection_tmdb_unavailable": "TMDB तक पहुँचा नहीं जा सका। इंटरनेट, DNS और नेटवर्क प्रतिबंध जाँचें।",
+  "connection_tmdb_rate_limited": "TMDB अनुरोध सीमित कर रहा है। थोड़ी देर बाद फिर कोशिश करें।",
+  "connection_tmdb_unexpected": "TMDB से अप्रत्याशित जवाब मिला। कनेक्शन और प्रॉक्सी जाँचें।",
+  "connection_provider_missing": "प्रदाता API: सेवा URL सेट नहीं है। सीधे स्रोत फिर भी उपलब्ध हो सकते हैं।",
+  "connection_provider_connected": "प्रदाता API: कनेक्ट हुआ और सक्षम प्रदाता मिले।",
+  "connection_provider_empty": "प्रदाता API: कनेक्ट हुआ, लेकिन कोई सक्षम प्रदाता नहीं मिला।",
+  "connection_provider_unavailable": "प्रदाता API उपलब्ध नहीं है या संगत नहीं है। URL जाँचें या सेवा संचालक से संपर्क करें।"
 }

@@ -2122,5 +2122,22 @@
   "connection_setup_message": "لا يحتوي هذا الإصدار على مفتاح TMDB API. أضف مفتاح v3 عامًا وصالحًا لتحميل الأفلام والمسلسلات.",
   "connection_configure": "إعداد",
   "connection_provider_error": "تعذر الوصول إلى خدمة المزوّدين. تحقق من عنوانها في الكتالوج والمزوّدين وحاول مجددًا. يظل VixSrc Direct متاحًا حيثما كان مدعومًا.",
-  "connection_playback_no_sources": "لم يُعثر على مصادر فيديو وتعذر الوصول إلى خدمة المزوّدين. تحقق من الكتالوج والمزوّدين في الإعدادات وحاول مجددًا."
+  "connection_playback_no_sources": "لم يُعثر على مصادر فيديو وتعذر الوصول إلى خدمة المزوّدين. تحقق من الكتالوج والمزوّدين في الإعدادات وحاول مجددًا.",
+  "connection_tmdb_proxy_label": "وكيل TMDB عبر HTTPS (اختياري)",
+  "connection_invalid_proxy": "أدخل عنوان وكيل HTTPS دون بيانات اعتماد أو استعلام أو جزء.",
+  "connection_proxy_warning": "يمكن لوكيل TMDB رؤية مفتاح API. استخدم خدمة موثوقة ومتوافقة فقط، أو اترك الحقل فارغًا للقيمة الافتراضية.",
+  "connection_test": "اختبار الاتصالات",
+  "connection_checking": "جارٍ اختبار الاتصالات…",
+  "connection_tmdb_missing": "TMDB: لا يوجد مفتاح مهيأ. أضف مفتاح TMDB API v3 الخاص بك.",
+  "connection_tmdb_connected": "TMDB: تم الاتصال مباشرة وقُبل المفتاح.",
+  "connection_tmdb_proxy_connected": "TMDB: تم الاتصال عبر الوكيل المهيأ وقُبل المفتاح.",
+  "connection_tmdb_rejected": "رفض TMDB هذا المفتاح. استخدم مفتاح API v3، وليس رمز الوصول للقراءة الأطول.",
+  "connection_tmdb_blocked": "يبدو أن TMDB محجوب أو أعاد صفحة تصفية. تحقق من الشبكة أو استخدم وكيل TMDB موثوقًا عبر HTTPS.",
+  "connection_tmdb_unavailable": "تعذر الوصول إلى TMDB. تحقق من الإنترنت وDNS وقيود الشبكة.",
+  "connection_tmdb_rate_limited": "يحد TMDB من الطلبات. انتظر قليلًا ثم حاول مجددًا.",
+  "connection_tmdb_unexpected": "أعاد TMDB استجابة غير متوقعة. تحقق من الاتصال والوكيل.",
+  "connection_provider_missing": "واجهة المزوّدين: لم يُهيأ عنوان خدمة. قد تظل المصادر المباشرة متاحة.",
+  "connection_provider_connected": "واجهة المزوّدين: تم الاتصال وعُثر على مزوّدين مفعّلين.",
+  "connection_provider_empty": "واجهة المزوّدين: تم الاتصال، لكن لا يوجد مزوّدون مفعّلون.",
+  "connection_provider_unavailable": "واجهة المزوّدين غير متاحة أو غير متوافقة. تحقق من العنوان أو اتصل بمشغّل الخدمة."
 }

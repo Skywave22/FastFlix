@@ -2051,5 +2051,22 @@
   "connection_setup_message": "This build has no TMDB API key. Add a valid public v3 API key to load movies and series.",
   "connection_configure": "Configure",
   "connection_provider_error": "The provider service could not be reached. Check its URL in Catalog & providers and retry. VixSrc Direct remains available where supported.",
-  "connection_playback_no_sources": "No video sources were found and the provider service could not be reached. Check Catalog & providers in Settings, then try again."
+  "connection_playback_no_sources": "No video sources were found and the provider service could not be reached. Check Catalog & providers in Settings, then try again.",
+  "connection_tmdb_proxy_label": "TMDB HTTPS proxy (optional)",
+  "connection_invalid_proxy": "Enter an HTTPS proxy URL without credentials, query, or fragment.",
+  "connection_proxy_warning": "A TMDB proxy can see your API key. Only use a trusted, compatible service; leave blank for the app default.",
+  "connection_test": "Test connections",
+  "connection_checking": "Testing connections…",
+  "connection_tmdb_missing": "TMDB: no key is configured. Add your TMDB v3 API Key.",
+  "connection_tmdb_connected": "TMDB: connected directly and the key was accepted.",
+  "connection_tmdb_proxy_connected": "TMDB: connected through the configured proxy and the key was accepted.",
+  "connection_tmdb_rejected": "TMDB rejected this key. Use the v3 API Key, not the longer Read Access Token.",
+  "connection_tmdb_blocked": "TMDB appears blocked or returned a filtering page. Check your network or use a trusted HTTPS TMDB proxy.",
+  "connection_tmdb_unavailable": "TMDB could not be reached. Check your internet, DNS, and network restrictions.",
+  "connection_tmdb_rate_limited": "TMDB is rate-limiting requests. Wait a little and retry.",
+  "connection_tmdb_unexpected": "TMDB returned an unexpected response. Check your connection and proxy.",
+  "connection_provider_missing": "Provider API: no service URL is configured. Direct sources may still be available.",
+  "connection_provider_connected": "Provider API: connected and returned enabled providers.",
+  "connection_provider_empty": "Provider API: connected, but returned no enabled providers.",
+  "connection_provider_unavailable": "Provider API: unavailable or incompatible. Check the URL or contact the service operator."
 }

@@ -14,6 +14,7 @@ class AppDependencyProvider extends ChangeNotifier {
 
   String _clientTmdbKey = '';
   String _clientScraperUrl = '';
+  String _clientTmdbProxy = '';
   int _contentConfigurationRevision = 0;
 
   /// Changes only when effective catalog configuration or connectivity changes,
@@ -21,6 +22,9 @@ class AppDependencyProvider extends ChangeNotifier {
   int get contentConfigurationRevision => _contentConfigurationRevision;
   String get clientTmdbKey => _clientTmdbKey;
   String get clientScraperUrl => _clientScraperUrl;
+  String get clientTmdbProxy => _clientTmdbProxy;
+  String get fallbackClientTmdbKey => fallbackTmdbApiKey;
+  String get fallbackTmdbProxy => _tmdbProxy;
   bool get hasTmdbKey => TMDB_API_KEY.trim().isNotEmpty;
 
   static bool validClientTmdbKey(String value) {
@@ -41,12 +45,28 @@ class AppDependencyProvider extends ChangeNotifier {
         !uri.hasFragment;
   }
 
+  /// The proxy receives the TMDB key, so local overrides require HTTPS and
+  /// cannot contain URL credentials or their own secret query parameters.
+  static bool validClientTmdbProxy(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return true;
+    final uri = Uri.tryParse(raw);
+    return uri != null &&
+        uri.scheme == 'https' &&
+        uri.host.isNotEmpty &&
+        uri.userInfo.isEmpty &&
+        !uri.hasQuery &&
+        !uri.hasFragment;
+  }
+
   Future<void> loadClientConnection() async {
     final saved = _preferences.getClientConnection();
     final key = (saved['tmdbKey'] ?? '').trim();
     final url = (saved['scraperUrl'] ?? '').trim();
+    final proxy = (saved['tmdbProxy'] ?? '').trim();
     _clientTmdbKey = validClientTmdbKey(key) ? key : '';
     _clientScraperUrl = validClientScraperUrl(url) ? url : '';
+    _clientTmdbProxy = validClientTmdbProxy(proxy) ? proxy : '';
     setClientTmdbApiKey(_clientTmdbKey);
     _contentConfigurationRevision++;
     notifyListeners();
@@ -55,21 +75,29 @@ class AppDependencyProvider extends ChangeNotifier {
   Future<void> saveClientConnection({
     required String tmdbKey,
     required String scraperUrl,
+    String tmdbProxy = '',
   }) async {
     final key = tmdbKey.trim();
     final url = scraperUrl.trim().replaceFirst(RegExp(r'/+$'), '');
-    if (!validClientTmdbKey(key) || !validClientScraperUrl(url)) {
+    final proxy = tmdbProxy.trim().replaceFirst(RegExp(r'/+$'), '');
+    if (!validClientTmdbKey(key) ||
+        !validClientScraperUrl(url) ||
+        !validClientTmdbProxy(proxy)) {
       throw const FormatException('Invalid client connection settings');
     }
-    await _preferences.setClientConnection(tmdbKey: key, scraperUrl: url);
+    await _preferences.setClientConnection(
+        tmdbKey: key, scraperUrl: url, tmdbProxy: proxy);
     final previousKey = TMDB_API_KEY;
     final previousClientKey = _clientTmdbKey;
     final previousUrl = _clientScraperUrl;
+    final previousProxy = this.tmdbProxy;
     _clientTmdbKey = key;
     _clientScraperUrl = url;
+    _clientTmdbProxy = proxy;
     setClientTmdbApiKey(key);
     if (previousKey != TMDB_API_KEY ||
-        previousClientKey != key || previousUrl != url) {
+        previousClientKey != key || previousUrl != url ||
+        previousProxy != this.tmdbProxy) {
       _contentConfigurationRevision++;
       notifyListeners();
     }
@@ -103,16 +131,22 @@ class AppDependencyProvider extends ChangeNotifier {
           : flixquestApiUrl;
   String get flixquestAPIURLV2 => configuredFlixquestAPIURL;
 
-  /// An explicit user override is exclusive; otherwise try every published
-  /// instance and finally the legacy/bundled URL. De-duplicate without losing
-  /// the server order, and keep the selected server for its issued tokens.
-  List<String> get scraperApiCandidates {
-    if (_clientScraperUrl.isNotEmpty) return [_clientScraperUrl];
+  /// An explicit user override is exclusive. Reserve space for the bundled
+  /// and legacy URLs even when many remote instances were published, since
+  /// discovery makes at most four attempts. The successful server must also
+  /// be kept for its issued stream and size tokens.
+  List<String> get scraperApiCandidates => _clientScraperUrl.isNotEmpty
+      ? [_clientScraperUrl]
+      : fallbackScraperApiCandidates;
+
+  /// Also used when an unsaved form clears an existing override.
+  List<String> get fallbackScraperApiCandidates {
     final seen = <String>{};
     return [
-      ..._flixquestApiInstances,
+      ..._flixquestApiInstances.take(2),
       _flixquestAPIUrl,
       flixquestApiUrl,
+      ..._flixquestApiInstances.skip(2),
     ]
         .map((url) => url.trim().replaceFirst(RegExp(r'/+$'), ''))
         .where((url) => url.isNotEmpty && seen.add(url))
@@ -168,7 +202,8 @@ class AppDependencyProvider extends ChangeNotifier {
   String get changeLog => _changeLog;
 
   String _tmdbProxy = '';
-  String get tmdbProxy => _tmdbProxy;
+  String get tmdbProxy =>
+      _clientTmdbProxy.isNotEmpty ? _clientTmdbProxy : _tmdbProxy;
 
   /// The Telegram channel Home invites people to join; null hides the invite.
   Uri? _telegramChannelUrl;

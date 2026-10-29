@@ -2067,7 +2067,24 @@ class CodegenLoader extends AssetLoader{
   "connection_setup_message": "This build has no TMDB API key. Add a valid public v3 API key to load movies and series.",
   "connection_configure": "Configure",
   "connection_provider_error": "The provider service could not be reached. Check its URL in Catalog & providers and retry. VixSrc Direct remains available where supported.",
-  "connection_playback_no_sources": "No video sources were found and the provider service could not be reached. Check Catalog & providers in Settings, then try again."
+  "connection_playback_no_sources": "No video sources were found and the provider service could not be reached. Check Catalog & providers in Settings, then try again.",
+  "connection_tmdb_proxy_label": "TMDB HTTPS proxy (optional)",
+  "connection_invalid_proxy": "Enter an HTTPS proxy URL without credentials, query, or fragment.",
+  "connection_proxy_warning": "A TMDB proxy can see your API key. Only use a trusted, compatible service; leave blank for the app default.",
+  "connection_test": "Test connections",
+  "connection_checking": "Testing connections…",
+  "connection_tmdb_missing": "TMDB: no key is configured. Add your TMDB v3 API Key.",
+  "connection_tmdb_connected": "TMDB: connected directly and the key was accepted.",
+  "connection_tmdb_proxy_connected": "TMDB: connected through the configured proxy and the key was accepted.",
+  "connection_tmdb_rejected": "TMDB rejected this key. Use the v3 API Key, not the longer Read Access Token.",
+  "connection_tmdb_blocked": "TMDB appears blocked or returned a filtering page. Check your network or use a trusted HTTPS TMDB proxy.",
+  "connection_tmdb_unavailable": "TMDB could not be reached. Check your internet, DNS, and network restrictions.",
+  "connection_tmdb_rate_limited": "TMDB is rate-limiting requests. Wait a little and retry.",
+  "connection_tmdb_unexpected": "TMDB returned an unexpected response. Check your connection and proxy.",
+  "connection_provider_missing": "Provider API: no service URL is configured. Direct sources may still be available.",
+  "connection_provider_connected": "Provider API: connected and returned enabled providers.",
+  "connection_provider_empty": "Provider API: connected, but returned no enabled providers.",
+  "connection_provider_unavailable": "Provider API: unavailable or incompatible. Check the URL or contact the service operator."
 };
 static const Map<String,dynamic> _hi = {
   "popularity_descending": "लोकप्रियता घटती",
@@ -4122,7 +4139,24 @@ static const Map<String,dynamic> _hi = {
   "connection_setup_message": "इस बिल्ड में TMDB API कुंजी नहीं है। फ़िल्में और सीरीज़ लोड करने के लिए मान्य सार्वजनिक v3 API कुंजी जोड़ें।",
   "connection_configure": "सेटअप करें",
   "connection_provider_error": "प्रदाता सेवा से कनेक्ट नहीं हो सका। कैटलॉग और प्रदाता में URL जाँचें और फिर कोशिश करें। जहाँ समर्थित है वहाँ VixSrc Direct उपलब्ध है।",
-  "connection_playback_no_sources": "कोई वीडियो स्रोत नहीं मिला और प्रदाता सेवा से कनेक्ट नहीं हो सका। सेटिंग में कैटलॉग और प्रदाता जाँचें और फिर कोशिश करें।"
+  "connection_playback_no_sources": "कोई वीडियो स्रोत नहीं मिला और प्रदाता सेवा से कनेक्ट नहीं हो सका। सेटिंग में कैटलॉग और प्रदाता जाँचें और फिर कोशिश करें।",
+  "connection_tmdb_proxy_label": "TMDB HTTPS प्रॉक्सी (वैकल्पिक)",
+  "connection_invalid_proxy": "बिना क्रेडेंशियल, क्वेरी या फ़्रैगमेंट वाला HTTPS प्रॉक्सी URL डालें।",
+  "connection_proxy_warning": "TMDB प्रॉक्सी आपकी API कुंजी देख सकता है। केवल भरोसेमंद और संगत सेवा का उपयोग करें; डिफ़ॉल्ट के लिए खाली छोड़ें।",
+  "connection_test": "कनेक्शन जाँचें",
+  "connection_checking": "कनेक्शन जाँचे जा रहे हैं…",
+  "connection_tmdb_missing": "TMDB: कोई कुंजी सेट नहीं है। अपनी TMDB v3 API कुंजी जोड़ें।",
+  "connection_tmdb_connected": "TMDB: सीधे कनेक्ट हुआ और कुंजी स्वीकार की गई।",
+  "connection_tmdb_proxy_connected": "TMDB: सेट प्रॉक्सी से कनेक्ट हुआ और कुंजी स्वीकार की गई।",
+  "connection_tmdb_rejected": "TMDB ने कुंजी अस्वीकार की। v3 API कुंजी इस्तेमाल करें, लंबा रीड एक्सेस टोकन नहीं।",
+  "connection_tmdb_blocked": "TMDB ब्लॉक लगता है या फ़िल्टर पेज लौटा रहा है। नेटवर्क जाँचें या भरोसेमंद HTTPS TMDB प्रॉक्सी इस्तेमाल करें।",
+  "connection_tmdb_unavailable": "TMDB तक पहुँचा नहीं जा सका। इंटरनेट, DNS और नेटवर्क प्रतिबंध जाँचें।",
+  "connection_tmdb_rate_limited": "TMDB अनुरोध सीमित कर रहा है। थोड़ी देर बाद फिर कोशिश करें।",
+  "connection_tmdb_unexpected": "TMDB से अप्रत्याशित जवाब मिला। कनेक्शन और प्रॉक्सी जाँचें।",
+  "connection_provider_missing": "प्रदाता API: सेवा URL सेट नहीं है। सीधे स्रोत फिर भी उपलब्ध हो सकते हैं।",
+  "connection_provider_connected": "प्रदाता API: कनेक्ट हुआ और सक्षम प्रदाता मिले।",
+  "connection_provider_empty": "प्रदाता API: कनेक्ट हुआ, लेकिन कोई सक्षम प्रदाता नहीं मिला।",
+  "connection_provider_unavailable": "प्रदाता API उपलब्ध नहीं है या संगत नहीं है। URL जाँचें या सेवा संचालक से संपर्क करें।"
 };
 static const Map<String,dynamic> _es = {
   "popularity_descending": "Popularidad descendiente",
@@ -6177,7 +6211,24 @@ static const Map<String,dynamic> _es = {
   "connection_setup_message": "Esta compilación no tiene clave de API TMDB. Añade una clave pública v3 válida para cargar películas y series.",
   "connection_configure": "Configurar",
   "connection_provider_error": "No se pudo conectar con el servicio de proveedores. Comprueba su URL en Catálogo y proveedores y reintenta. VixSrc Direct sigue disponible donde sea compatible.",
-  "connection_playback_no_sources": "No se encontraron fuentes de vídeo y no se pudo conectar con el servicio de proveedores. Comprueba Catálogo y proveedores en Ajustes y vuelve a intentarlo."
+  "connection_playback_no_sources": "No se encontraron fuentes de vídeo y no se pudo conectar con el servicio de proveedores. Comprueba Catálogo y proveedores en Ajustes y vuelve a intentarlo.",
+  "connection_tmdb_proxy_label": "Proxy HTTPS de TMDB (opcional)",
+  "connection_invalid_proxy": "Introduce una URL HTTPS del proxy sin credenciales, consulta ni fragmento.",
+  "connection_proxy_warning": "Un proxy de TMDB puede ver tu clave API. Usa solo un servicio compatible y de confianza; deja el campo vacío para usar el predeterminado.",
+  "connection_test": "Probar conexiones",
+  "connection_checking": "Comprobando conexiones…",
+  "connection_tmdb_missing": "TMDB: no hay ninguna clave configurada. Añade tu clave API v3 de TMDB.",
+  "connection_tmdb_connected": "TMDB: conexión directa establecida y clave aceptada.",
+  "connection_tmdb_proxy_connected": "TMDB: conexión mediante el proxy configurado y clave aceptada.",
+  "connection_tmdb_rejected": "TMDB rechazó esta clave. Usa la clave API v3, no el token de acceso de lectura más largo.",
+  "connection_tmdb_blocked": "TMDB parece estar bloqueado o devolvió una página de filtro. Comprueba tu red o usa un proxy HTTPS de confianza.",
+  "connection_tmdb_unavailable": "No se pudo acceder a TMDB. Comprueba Internet, el DNS y las restricciones de red.",
+  "connection_tmdb_rate_limited": "TMDB está limitando las solicitudes. Espera un poco y vuelve a intentarlo.",
+  "connection_tmdb_unexpected": "TMDB devolvió una respuesta inesperada. Comprueba la conexión y el proxy.",
+  "connection_provider_missing": "API de proveedores: no hay una URL configurada. Las fuentes directas podrían seguir disponibles.",
+  "connection_provider_connected": "API de proveedores: conectada y con proveedores habilitados.",
+  "connection_provider_empty": "API de proveedores: conectada, pero sin proveedores habilitados.",
+  "connection_provider_unavailable": "API de proveedores: no disponible o incompatible. Comprueba la URL o contacta con el operador."
 };
 static const Map<String,dynamic> _ar = {
   "popularity_descending": "ترتيب تنازلي حسب الشعبية",
@@ -8303,7 +8354,24 @@ static const Map<String,dynamic> _ar = {
   "connection_setup_message": "لا يحتوي هذا الإصدار على مفتاح TMDB API. أضف مفتاح v3 عامًا وصالحًا لتحميل الأفلام والمسلسلات.",
   "connection_configure": "إعداد",
   "connection_provider_error": "تعذر الوصول إلى خدمة المزوّدين. تحقق من عنوانها في الكتالوج والمزوّدين وحاول مجددًا. يظل VixSrc Direct متاحًا حيثما كان مدعومًا.",
-  "connection_playback_no_sources": "لم يُعثر على مصادر فيديو وتعذر الوصول إلى خدمة المزوّدين. تحقق من الكتالوج والمزوّدين في الإعدادات وحاول مجددًا."
+  "connection_playback_no_sources": "لم يُعثر على مصادر فيديو وتعذر الوصول إلى خدمة المزوّدين. تحقق من الكتالوج والمزوّدين في الإعدادات وحاول مجددًا.",
+  "connection_tmdb_proxy_label": "وكيل TMDB عبر HTTPS (اختياري)",
+  "connection_invalid_proxy": "أدخل عنوان وكيل HTTPS دون بيانات اعتماد أو استعلام أو جزء.",
+  "connection_proxy_warning": "يمكن لوكيل TMDB رؤية مفتاح API. استخدم خدمة موثوقة ومتوافقة فقط، أو اترك الحقل فارغًا للقيمة الافتراضية.",
+  "connection_test": "اختبار الاتصالات",
+  "connection_checking": "جارٍ اختبار الاتصالات…",
+  "connection_tmdb_missing": "TMDB: لا يوجد مفتاح مهيأ. أضف مفتاح TMDB API v3 الخاص بك.",
+  "connection_tmdb_connected": "TMDB: تم الاتصال مباشرة وقُبل المفتاح.",
+  "connection_tmdb_proxy_connected": "TMDB: تم الاتصال عبر الوكيل المهيأ وقُبل المفتاح.",
+  "connection_tmdb_rejected": "رفض TMDB هذا المفتاح. استخدم مفتاح API v3، وليس رمز الوصول للقراءة الأطول.",
+  "connection_tmdb_blocked": "يبدو أن TMDB محجوب أو أعاد صفحة تصفية. تحقق من الشبكة أو استخدم وكيل TMDB موثوقًا عبر HTTPS.",
+  "connection_tmdb_unavailable": "تعذر الوصول إلى TMDB. تحقق من الإنترنت وDNS وقيود الشبكة.",
+  "connection_tmdb_rate_limited": "يحد TMDB من الطلبات. انتظر قليلًا ثم حاول مجددًا.",
+  "connection_tmdb_unexpected": "أعاد TMDB استجابة غير متوقعة. تحقق من الاتصال والوكيل.",
+  "connection_provider_missing": "واجهة المزوّدين: لم يُهيأ عنوان خدمة. قد تظل المصادر المباشرة متاحة.",
+  "connection_provider_connected": "واجهة المزوّدين: تم الاتصال وعُثر على مزوّدين مفعّلين.",
+  "connection_provider_empty": "واجهة المزوّدين: تم الاتصال، لكن لا يوجد مزوّدون مفعّلون.",
+  "connection_provider_unavailable": "واجهة المزوّدين غير متاحة أو غير متوافقة. تحقق من العنوان أو اتصل بمشغّل الخدمة."
 };
 static const Map<String, Map<String,dynamic>> mapLocales = {"en": _en, "hi": _hi, "es": _es, "ar": _ar};
 }

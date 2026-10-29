@@ -143,7 +143,14 @@ public TMDB **v3 API key** and/or the base URL of a reachable, compatible
 FlixQuest Scraper API v2. Home offers the same setup when no catalog key is
 configured. The optional overrides are stored locally **without encryption**;
 never enter passwords, account access tokens, or server/admin secrets. Leave a
-field blank to return to the bundled or remotely configured value. Home reloads
+field blank to return to the bundled or remotely configured value. An existing
+on-device key takes precedence over a newly bundled key until it is cleared.
+Tap **Test
+connections** to check the values currently entered without saving them. The
+results distinguish a rejected key, a network/filtering problem, and an
+unavailable or empty provider service; they do not prove that every stream works.
+For networks that block TMDB, an optional compatible HTTPS TMDB proxy can be
+provided. The proxy can see your key, so use only a trusted service. Home reloads
 when its effective configuration changes or the device reconnects. A provider
 URL is an exclusive override; without one, the app tries up to four configured
 instances and keeps the working instance for its streams and size tokens.
@@ -304,13 +311,23 @@ runs the focused Flutter and Android download-settings tests, and uploads a
 universal APK, three ABI-specific APKs, and `SHA256SUMS.txt`.
 
 For an artifact-only build without all the secrets, it instead uploads a
-**debug preview APK** with `.env.example` and a temporary debug signing key.
-The example has an emulator-only backend URL and no TMDB key, so online features
-may not work. The preview also contains deliberately invalid, debug-only Firebase
-options: it is not registered with Firebase and Firebase services will not work.
-The APK cannot update an installation signed by a different key and must not be
-distributed as a production release. Tag and manual release builds never use
-this fallback.
+**debug preview APK** with a preview-only debug signing key, cached on a
+best-effort basis so successive previews can usually update each other. The key
+may change if the cache expires; it is not suitable for production. The preview
+starts with `.env.example`, but uses any public `TMDB_API_KEY`, `FLIXQUEST_API_URL`,
+and `LARAVEL_API_URL` values present in a partial `FLIXQUEST_ENV` secret. A
+separate Actions secret named `TMDB_API_KEY` overrides the TMDB entry; an Actions
+secret or variable named `FLIXQUEST_API_URL` or `LARAVEL_API_URL` similarly
+overrides its URL. These values are bundled into the APK and are visible to
+anyone who downloads it; never use account tokens, passwords, or server secrets.
+The workflow summary shows which values were supplied, without printing them.
+
+Without supplied values, there is no TMDB key or provider URL, and the backend
+URL is emulator-only, so online features may not work. The preview contains
+invalid, debug-only Firebase options: it is not registered with Firebase and
+Firebase services will not work. It cannot update an installation signed by a
+different key and must not be distributed as a production release. Tag and
+manual release builds never use this fallback.
 
 To build and publish production APKs, configure these repository secrets under
 **Settings → Secrets and variables → Actions**:

@@ -165,7 +165,16 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                 ),
               )
             : TvStatePanel.error(
-                message: tr('home_load_failed'), onRetry: _retry),
+                message: tr('home_load_failed'),
+                onRetry: _retry,
+                secondaryActionLabel: tr('connection_settings'),
+                onSecondaryAction: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        const ConnectionSettingsScreen(television: true),
+                  ),
+                ),
+              ),
       );
     }
 

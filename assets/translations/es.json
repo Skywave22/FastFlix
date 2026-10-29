@@ -2051,5 +2051,22 @@
   "connection_setup_message": "Esta compilación no tiene clave de API TMDB. Añade una clave pública v3 válida para cargar películas y series.",
   "connection_configure": "Configurar",
   "connection_provider_error": "No se pudo conectar con el servicio de proveedores. Comprueba su URL en Catálogo y proveedores y reintenta. VixSrc Direct sigue disponible donde sea compatible.",
-  "connection_playback_no_sources": "No se encontraron fuentes de vídeo y no se pudo conectar con el servicio de proveedores. Comprueba Catálogo y proveedores en Ajustes y vuelve a intentarlo."
+  "connection_playback_no_sources": "No se encontraron fuentes de vídeo y no se pudo conectar con el servicio de proveedores. Comprueba Catálogo y proveedores en Ajustes y vuelve a intentarlo.",
+  "connection_tmdb_proxy_label": "Proxy HTTPS de TMDB (opcional)",
+  "connection_invalid_proxy": "Introduce una URL HTTPS del proxy sin credenciales, consulta ni fragmento.",
+  "connection_proxy_warning": "Un proxy de TMDB puede ver tu clave API. Usa solo un servicio compatible y de confianza; deja el campo vacío para usar el predeterminado.",
+  "connection_test": "Probar conexiones",
+  "connection_checking": "Comprobando conexiones…",
+  "connection_tmdb_missing": "TMDB: no hay ninguna clave configurada. Añade tu clave API v3 de TMDB.",
+  "connection_tmdb_connected": "TMDB: conexión directa establecida y clave aceptada.",
+  "connection_tmdb_proxy_connected": "TMDB: conexión mediante el proxy configurado y clave aceptada.",
+  "connection_tmdb_rejected": "TMDB rechazó esta clave. Usa la clave API v3, no el token de acceso de lectura más largo.",
+  "connection_tmdb_blocked": "TMDB parece estar bloqueado o devolvió una página de filtro. Comprueba tu red o usa un proxy HTTPS de confianza.",
+  "connection_tmdb_unavailable": "No se pudo acceder a TMDB. Comprueba Internet, el DNS y las restricciones de red.",
+  "connection_tmdb_rate_limited": "TMDB está limitando las solicitudes. Espera un poco y vuelve a intentarlo.",
+  "connection_tmdb_unexpected": "TMDB devolvió una respuesta inesperada. Comprueba la conexión y el proxy.",
+  "connection_provider_missing": "API de proveedores: no hay una URL configurada. Las fuentes directas podrían seguir disponibles.",
+  "connection_provider_connected": "API de proveedores: conectada y con proveedores habilitados.",
+  "connection_provider_empty": "API de proveedores: conectada, pero sin proveedores habilitados.",
+  "connection_provider_unavailable": "API de proveedores: no disponible o incompatible. Comprueba la URL o contacta con el operador."
 }

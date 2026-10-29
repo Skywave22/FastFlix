@@ -99,8 +99,22 @@ enum MediaType { movie, tvShow }
 /// are always verified.
 class MyHttpOverrides extends HttpOverrides {
   MyHttpOverrides({Set<String> verifiedHosts = const {}})
-      : verifiedHosts = {for (final host in verifiedHosts) host.toLowerCase()};
+      : verifiedHosts = {
+          // TMDB requests carry the user's client key.
+          'api.themoviedb.org',
+          'image.tmdb.org',
+          for (final host in verifiedHosts) host.toLowerCase(),
+        };
   final Set<String> verifiedHosts;
+
+  /// A configured TMDB proxy receives the client key and must not inherit the
+  /// relaxed certificate behavior used for unrelated third-party video hosts.
+  void protectUrlHost(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri != null && uri.scheme == 'https' && uri.host.isNotEmpty) {
+      verifiedHosts.add(uri.host.toLowerCase());
+    }
+  }
 
   bool acceptsBadCertificate(String host) =>
       !verifiedHosts.contains(host.toLowerCase());

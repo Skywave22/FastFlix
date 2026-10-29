@@ -51,7 +51,40 @@ for name in ('FLIXQUEST_API_URL', 'LARAVEL_API_URL'):
         note(f'Upstream {name}: absent or not a credential-free URL.')
         continue
     note(f'Upstream {name} host: {host}')
-    if name != 'FLIXQUEST_API_URL':
+    if name == 'LARAVEL_API_URL':
+        # The upstream client marks this bootstrap endpoint as public and
+        # sends no account/session credentials. Only report public host names;
+        # never print or use any keys that might appear in its response.
+        root = raw.rstrip('/')
+        if not root.endswith('/api/v1'):
+            root += '/api/v1'
+        request = urllib.request.Request(root + '/config/bootstrap',
+                                         headers={'Accept': 'application/json'})
+        try:
+            with urllib.request.urlopen(request, timeout=12) as response:
+                result = json.load(response)
+                data = result.get('data', {}) if isinstance(result, dict) else {}
+                network = data.get('network', {}) if isinstance(data, dict) else {}
+                note(f'Upstream public bootstrap returned HTTP {response.status}.')
+                candidates = []
+                if isinstance(network, dict):
+                    candidates.extend(network.get('flixquest_api_instances', [])
+                                      if isinstance(network.get('flixquest_api_instances'), list)
+                                      else [])
+                    candidates.extend([network.get('flixquest_api_url_v2'),
+                                       network.get('tmdb_proxy')])
+                for candidate in candidates:
+                    if not isinstance(candidate, str):
+                        continue
+                    parsed = urllib.parse.urlsplit(candidate)
+                    if (parsed.scheme in ('http', 'https') and parsed.hostname and
+                            not parsed.username and not parsed.password and
+                            not parsed.query and not parsed.fragment):
+                        note(f'Upstream public bootstrap service host: {parsed.hostname}')
+        except urllib.error.HTTPError as error:
+            note(f'Upstream public bootstrap returned HTTP {error.code}.')
+        except Exception:
+            note('Upstream public bootstrap was not reachable from the CI runner.')
         continue
     root = raw.rstrip('/')
     if not root.endswith('/api/v2'):

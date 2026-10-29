@@ -12,6 +12,8 @@ class TvStatePanel extends StatelessWidget {
     required this.icon,
     this.actionLabel,
     this.onAction,
+    this.secondaryActionLabel,
+    this.onSecondaryAction,
     super.key,
   });
 
@@ -20,10 +22,14 @@ class TvStatePanel extends StatelessWidget {
   final IconData icon;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final String? secondaryActionLabel;
+  final VoidCallback? onSecondaryAction;
 
   factory TvStatePanel.error({
     required VoidCallback onRetry,
     String? message,
+    String? secondaryActionLabel,
+    VoidCallback? onSecondaryAction,
   }) {
     return TvStatePanel(
       title: tr('something_went_wrong'),
@@ -31,6 +37,8 @@ class TvStatePanel extends StatelessWidget {
       icon: PhosphorIcons.warningCircle(),
       actionLabel: tr('retry'),
       onAction: onRetry,
+      secondaryActionLabel: secondaryActionLabel,
+      onSecondaryAction: onSecondaryAction,
     );
   }
 
@@ -73,6 +81,14 @@ class TvStatePanel extends StatelessWidget {
                 icon: PhosphorIcons.arrowClockwise(),
                 prominent: true,
                 onActivate: onAction!,
+              ),
+            ],
+            if (secondaryActionLabel != null && onSecondaryAction != null) ...<Widget>[
+              const SizedBox(height: 12),
+              TvPillButton(
+                label: secondaryActionLabel!,
+                icon: PhosphorIcons.gear(),
+                onActivate: onSecondaryAction!,
               ),
             ],
           ],

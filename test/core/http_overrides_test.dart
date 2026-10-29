@@ -6,6 +6,8 @@ void main() {
     final overrides = MyHttpOverrides(verifiedHosts: {'Backend.Flix.Quest'});
     expect(overrides.acceptsBadCertificate('backend.flix.quest'), isFalse);
     expect(overrides.acceptsBadCertificate('BACKEND.flix.quest'), isFalse);
+    expect(overrides.acceptsBadCertificate('api.themoviedb.org'), isFalse);
+    expect(overrides.acceptsBadCertificate('IMAGE.TMDB.ORG'), isFalse);
     expect(overrides.acceptsBadCertificate('cdn.stream-host.example'), isTrue);
     expect(overrides.acceptsBadCertificate('evil.backend.flix.quest.example'),
         isTrue);
@@ -17,7 +19,7 @@ void main() {
     final client = overrides.createHttpClient(null);
     addTearDown(() => client.close(force: true));
     expect(overrides.acceptsBadCertificate('remote.example'), isTrue);
-    overrides.verifiedHosts.add('remote.example');
+    overrides.protectUrlHost('https://remote.example/proxy');
     // The callback reads the current host set rather than capturing a snapshot.
     expect(overrides.acceptsBadCertificate('remote.example'), isFalse);
     expect(overrides.acceptsBadCertificate('bundled.example'), isFalse);

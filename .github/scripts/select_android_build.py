@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select a signed release or a clearly labeled, secret-free preview build."""
+"""Select a signed release or a clearly labeled debug preview build."""
 
 import os
 from pathlib import Path
@@ -41,8 +41,8 @@ def main() -> None:
         handle.write(f"mode={mode}\n")
     if mode == "preview":
         print(
-            "::warning::Building a debug preview with example configuration. "
-            "It is not a production release and online features may not work."
+            "::warning::Building a debug preview. Public-client configuration "
+            "is bundled in the APK. It is not a production release."
         )
     else:
         print("Building with release configuration and signing.")

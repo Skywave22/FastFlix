@@ -482,6 +482,8 @@ class EmptyState extends StatelessWidget {
     this.actionLabel,
     this.actionIcon,
     this.onAction,
+    this.secondaryActionLabel,
+    this.onSecondaryAction,
     super.key,
   });
 
@@ -490,6 +492,8 @@ class EmptyState extends StatelessWidget {
     required String message,
     VoidCallback? onRetry,
     String? title,
+    String? secondaryActionLabel,
+    VoidCallback? onSecondaryAction,
     Key? key,
   }) : this(
           icon: PhosphorIcons.cloudSlash(),
@@ -498,6 +502,8 @@ class EmptyState extends StatelessWidget {
           actionLabel: onRetry == null ? null : tr('retry'),
           actionIcon: PhosphorIcons.arrowClockwise(),
           onAction: onRetry,
+          secondaryActionLabel: secondaryActionLabel,
+          onSecondaryAction: onSecondaryAction,
           key: key,
         );
 
@@ -507,6 +513,8 @@ class EmptyState extends StatelessWidget {
   final String? actionLabel;
   final IconData? actionIcon;
   final VoidCallback? onAction;
+  final String? secondaryActionLabel;
+  final VoidCallback? onSecondaryAction;
 
   @override
   Widget build(BuildContext context) {
@@ -547,6 +555,11 @@ class EmptyState extends StatelessWidget {
                   onPressed: onAction,
                 ),
               ],
+              if (secondaryActionLabel != null && onSecondaryAction != null)
+                TextButton(
+                  onPressed: onSecondaryAction,
+                  child: Text(secondaryActionLabel!),
+                ),
             ],
           ),
         ),

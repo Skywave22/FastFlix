@@ -1954,5 +1954,22 @@ abstract class  LocaleKeys {
   static const connection_configure = 'connection_configure';
   static const connection_provider_error = 'connection_provider_error';
   static const connection_playback_no_sources = 'connection_playback_no_sources';
+  static const connection_tmdb_proxy_label = 'connection_tmdb_proxy_label';
+  static const connection_invalid_proxy = 'connection_invalid_proxy';
+  static const connection_proxy_warning = 'connection_proxy_warning';
+  static const connection_test = 'connection_test';
+  static const connection_checking = 'connection_checking';
+  static const connection_tmdb_missing = 'connection_tmdb_missing';
+  static const connection_tmdb_connected = 'connection_tmdb_connected';
+  static const connection_tmdb_proxy_connected = 'connection_tmdb_proxy_connected';
+  static const connection_tmdb_rejected = 'connection_tmdb_rejected';
+  static const connection_tmdb_blocked = 'connection_tmdb_blocked';
+  static const connection_tmdb_unavailable = 'connection_tmdb_unavailable';
+  static const connection_tmdb_rate_limited = 'connection_tmdb_rate_limited';
+  static const connection_tmdb_unexpected = 'connection_tmdb_unexpected';
+  static const connection_provider_missing = 'connection_provider_missing';
+  static const connection_provider_connected = 'connection_provider_connected';
+  static const connection_provider_empty = 'connection_provider_empty';
+  static const connection_provider_unavailable = 'connection_provider_unavailable';
 
 }

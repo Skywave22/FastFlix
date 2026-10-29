@@ -2,11 +2,15 @@
 set -euo pipefail
 
 # Runs only against the disposable preview APK on a clean Android emulator.
-# The UI dump and screenshots contain no user data or configured credentials.
+# Disable networking to avoid contacting configured services or creating
+# accounts during a startup-only check; no user data is installed.
 package='io.github.skywave22.fastflix'
 activity="$package/dev.beamlak.flixquest_v2.FastFlixPlayIcon"
 artifact_dir="${RUNNER_TEMP:-/tmp}/fastflix-smoke"
 mkdir -p "$artifact_dir"
+adb shell cmd connectivity airplane-mode enable >/dev/null 2>&1 || true
+adb shell svc wifi disable >/dev/null 2>&1 || true
+adb shell svc data disable >/dev/null 2>&1 || true
 adb install -r "$1"
 adb logcat -c
 adb shell am start -W -n "$activity"
@@ -18,9 +22,17 @@ ready=0
 for attempt in $(seq 1 24); do
   adb shell uiautomator dump /sdcard/fastflix-window.xml >/dev/null 2>&1 || true
   adb pull /sdcard/fastflix-window.xml "$artifact_dir/window.xml" >/dev/null 2>&1 || true
-  if [[ -s "$artifact_dir/window.xml" ]] &&
-      grep -Fq "package=\"$package\"" "$artifact_dir/window.xml" &&
-      grep -Eq 'text="[^"]+"|content-desc="[^"]+"' "$artifact_dir/window.xml"; then
+  if [[ -s "$artifact_dir/window.xml" ]] && python3 -c '
+import sys, xml.etree.ElementTree as ET
+try:
+    root = ET.parse(sys.argv[1]).getroot()
+    ready = any(node.get("package") == sys.argv[2] and
+                (node.get("text", "").strip() or node.get("content-desc", "").strip())
+                for node in root.iter())
+except (OSError, ET.ParseError):
+    ready = False
+sys.exit(0 if ready else 1)
+' "$artifact_dir/window.xml" "$package"; then
     ready=1
     break
   fi

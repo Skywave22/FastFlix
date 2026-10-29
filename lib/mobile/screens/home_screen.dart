@@ -486,6 +486,12 @@ class _HomeScreenState extends State<HomeScreen>
               : EmptyState.error(
                   message: tr('home_load_failed'),
                   onRetry: _retry,
+                  secondaryActionLabel: tr('connection_settings'),
+                  onSecondaryAction: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ConnectionSettingsScreen(),
+                    ),
+                  ),
                 ),
         ),
       ];

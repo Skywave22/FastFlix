@@ -8,10 +8,12 @@ String? _clientTmdbApiKey;
 
 /// The optional user-supplied public client key takes precedence over remote
 /// and bundled values. It is intentionally separate from account credentials.
-String get TMDB_API_KEY => _clientTmdbApiKey ??
-    _remoteTmdbApiKey ??
+/// Used when the on-device override is cleared, including in connection tests.
+String get fallbackTmdbApiKey => _remoteTmdbApiKey ??
     (dotenv.isInitialized ? dotenv.env['TMDB_API_KEY'] : null) ??
     '';
+
+String get TMDB_API_KEY => _clientTmdbApiKey ?? fallbackTmdbApiKey;
 
 set TMDB_API_KEY(String value) {
   final trimmed = value.trim();

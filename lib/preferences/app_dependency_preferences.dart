@@ -24,9 +24,11 @@ class AppDependencies {
       if (decoded is Map) {
         final key = decoded['tmdbKey'];
         final url = decoded['scraperUrl'];
+        final proxy = decoded['tmdbProxy'];
         return {
           'tmdbKey': key is String ? key : '',
           'scraperUrl': url is String ? url : '',
+          'tmdbProxy': proxy is String ? proxy : '',
         };
       }
     } catch (_) {
@@ -38,10 +40,15 @@ class AppDependencies {
   Future<void> setClientConnection({
     required String tmdbKey,
     required String scraperUrl,
+    String tmdbProxy = '',
   }) async {
     final saved = await sharedPrefsSingleton.setString(
       CLIENT_CONNECTION,
-      jsonEncode({'tmdbKey': tmdbKey, 'scraperUrl': scraperUrl}),
+      jsonEncode({
+        'tmdbKey': tmdbKey,
+        'scraperUrl': scraperUrl,
+        'tmdbProxy': tmdbProxy,
+      }),
     );
     if (!saved) throw StateError('Could not save client connection');
   }

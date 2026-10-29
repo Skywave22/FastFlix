@@ -203,6 +203,11 @@ void main() async {
   final httpOverrides = MyHttpOverrides(
       verifiedHosts: {Uri.parse(environment.laravelApiUrl).host});
   HttpOverrides.global = httpOverrides;
+  void protectTmdbProxy() =>
+      httpOverrides.protectUrlHost(appDependencyProvider.tmdbProxy);
+  protectTmdbProxy();
+  // Remote configuration and the on-device override can both change later.
+  appDependencyProvider.addListener(protectTmdbProxy);
   final injector = await buildInjector(
       environment: environment,
       deleteLocalData: (owner) async {

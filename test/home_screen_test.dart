@@ -476,6 +476,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('home_load_failed'), findsOneWidget);
+    expect(find.text('connection_settings'), findsWidgets);
 
     source.fail = false;
     await tester.tap(find.text('retry'));
