@@ -275,15 +275,22 @@ better_player_plus:
 
 ### Build and publish APKs with GitHub Actions
 
-The **Android APK** workflow builds the signed `prod` release with the Flutter
-version in `.fvmrc`, Java 17, and a pinned checkout of the sibling Better Player
-project. It runs the focused Flutter and Android download-settings tests, then
-uploads the universal APK, the three ABI-specific APKs, and `SHA256SUMS.txt` as
-a workflow artifact. Pushes to `arena/f6eedbd9-fastflix` run an artifact-only
-build; they do not publish a release.
+The **Android APK** workflow uses the Flutter version in `.fvmrc`, Java 17, and
+a pinned checkout of the sibling Better Player project. Pushes to
+`arena/f6eedbd9-fastflix` run an artifact-only build; they do not publish a
+release. With the secrets below configured, it builds the signed `prod` release,
+runs the focused Flutter and Android download-settings tests, and uploads a
+universal APK, three ABI-specific APKs, and `SHA256SUMS.txt`.
 
-Before running it, configure these repository secrets under **Settings → Secrets
-and variables → Actions**:
+For an artifact-only build without all the secrets, it instead uploads a
+**debug preview APK** with `.env.example` and a temporary debug signing key.
+The example has an emulator-only backend URL and no TMDB key, so online features
+may not work. The APK cannot update an installation signed by a different key
+and must not be distributed as a production release. Tag and manual release
+builds never use this fallback.
+
+To build and publish production APKs, configure these repository secrets under
+**Settings → Secrets and variables → Actions**:
 
 | Secret | Value |
 | --- | --- |
@@ -312,9 +319,10 @@ prerelease tags such as `v1.2.3-rc.1` are marked as prereleases. Set the app
 version in `pubspec.yaml` before tagging. The repository's Actions token must
 have permission to write contents/releases.
 
-You can also run **Android APK** manually: leave `release_tag` blank for a
-signed artifact-only build of the selected ref, or supply an existing tag to
-build that tag and attach the APKs to its release. The tag must include the
+You can also run **Android APK** manually: leave `release_tag` blank for an
+artifact-only build of the selected ref (signed release if configured, otherwise
+preview), or supply an existing tag to build that tag and attach signed APKs to
+its release. The tag must include the
 workflow's preparation scripts and feature tests. GitHub only exposes manual
 workflow dispatch after the workflow file exists on the repository's default
 branch; a tag push can run the workflow from the tagged commit without merging
