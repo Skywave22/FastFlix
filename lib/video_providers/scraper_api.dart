@@ -205,9 +205,10 @@ class ScraperApi {
     };
   }
 
-  /// Loads [path], asking for every server when [full] is set. A server with
-  /// full collection turned off (or a failed full request) falls back to the
-  /// ordinary first-working-server request.
+  /// Loads [path], asking for every server when [full] is set. If the API
+  /// explicitly does not support full collection, fall back to its ordinary
+  /// first-working-server request. Other failures advance to the next source
+  /// instead of repeating a potentially slow or unavailable scrape.
   Future<ProviderLoadResult> _loadStream(
     String path,
     Map<String, String> queryParameters, {
@@ -216,8 +217,7 @@ class ScraperApi {
     if (full) {
       final result =
           await _fetchStream(path, {...queryParameters, 'full': 'true'});
-      if (result.success && result.videoLinks?.isNotEmpty == true)
-        return result;
+      if (!_fullCollectionUnavailable(result)) return result;
       if (kDebugMode) {
         debugPrint(
           '[ScraperApi] Full collection unavailable for $path '
@@ -226,6 +226,16 @@ class ScraperApi {
       }
     }
     return await _fetchStream(path, queryParameters);
+  }
+
+  static bool _fullCollectionUnavailable(ProviderLoadResult result) {
+    if (result.success) return false;
+    final message = result.errorMessage?.toLowerCase() ?? '';
+    return message.contains('full stream collection') ||
+        (message.contains('full') &&
+            (message.contains('disabled') ||
+                message.contains('unsupported') ||
+                message.contains('not supported')));
   }
 
   Future<ProviderLoadResult> _fetchStream(

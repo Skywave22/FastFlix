@@ -385,6 +385,26 @@ void main() {
       expect(requests, 1);
     });
 
+    test('a timed-out full scrape advances without repeating the request',
+        () async {
+      var requests = 0;
+      final api = ScraperApi(
+        'https://scraper.example',
+        dio: scriptedDio((request) async {
+          requests++;
+          throw DioException(
+            requestOptions: request,
+            type: DioExceptionType.receiveTimeout,
+          );
+        }),
+      );
+      final result =
+          await api.loadMovie(providerId: 'vidsrc', movieId: 42, full: true);
+      expect(result.success, isFalse);
+      expect(result.errorMessage, 'Scraper request timed out');
+      expect(requests, 1);
+    });
+
     test('posts a signed token and maps a stream size estimate', () async {
       late RequestOptions request;
       final api = ScraperApi(
