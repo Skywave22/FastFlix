@@ -35,7 +35,7 @@ void main() {
     final settings = _PlayLogoSettings();
     addTearDown(settings.dispose);
     await tester.pumpWidget(
-      ChangeNotifierProvider.value(
+      ChangeNotifierProvider<SettingsProvider>.value(
         value: settings,
         child: const MaterialApp(
           home: ColoredBox(
