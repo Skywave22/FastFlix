@@ -1,4 +1,3 @@
-import 'package:flixquest/constants/app_constants.dart';
 import 'package:flixquest/models/fastflix_logo.dart';
 import 'package:flixquest/provider/app_dependency_provider.dart';
 import 'package:flixquest/provider/settings_provider.dart';
@@ -7,7 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+class _PlayLogoSettings extends SettingsProvider {
+  @override
+  FastFlixLogo get fastFlixLogo => FastFlixLogo.play;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -29,11 +32,8 @@ void main() {
 
   testWidgets('optional wordmark stays readable on a light background',
       (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    sharedPrefsSingleton = await SharedPreferences.getInstance();
-    final settings = SettingsProvider();
+    final settings = _PlayLogoSettings();
     addTearDown(settings.dispose);
-    await settings.setFastFlixLogo(FastFlixLogo.play);
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
         value: settings,
