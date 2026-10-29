@@ -18,7 +18,6 @@ import '../../provider/bookmark_provider.dart';
 import '../../services/bookmark_sync_service.dart';
 import '../../services/globle_method.dart';
 import '/screens/common/sync_screen.dart';
-import '../../widgets/hosted_ads_banner.dart';
 
 class BookmarkScreen extends StatefulWidget {
   const BookmarkScreen({this.embedded = false, super.key});
@@ -111,9 +110,6 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
               ),
             ),
             const SizedBox(height: AppSpace.xs),
-            RemoteHostedAdsBanner(
-              placement: 'bookmarks',
-            ),
             Expanded(
               child: IndexedStack(
                 index: _selectedKind,

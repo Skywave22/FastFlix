@@ -395,7 +395,6 @@ class _TvLandingIntro extends StatelessWidget {
             tr('tv_your_list_and_history_stay_in_sync_across_your_signed_in_devices'),
           ),
           (PhosphorIcons.playCircle(), tr('tv_benefit_resume')),
-          (PhosphorIcons.sparkle(), tr('tv_benefit_plus')),
         ])
           Padding(
             padding: EdgeInsets.only(bottom: compact ? 10 : 14),

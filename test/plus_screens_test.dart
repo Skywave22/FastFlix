@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:flixquest/data/ads/ads_policy.dart';
 import 'package:flixquest/data/models/billing.dart';
 import 'package:flixquest/data/repositories/billing_repository.dart';
 import 'package:flixquest/mobile/screens/plus_payment_screen.dart';
@@ -220,7 +219,6 @@ void main() {
   Future<void> done(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox());
     plus.dispose();
-    AdsPolicy.update(adFree: false);
   }
 
   Future<void> pump(WidgetTester tester, Widget child,
@@ -273,12 +271,12 @@ void main() {
     await pump(tester, const PlusScreen());
 
     expect(find.text('23'), findsOneWidget);
-    expect(find.text("You're ad-free"), findsOneWidget);
+    expect(find.text("Plus is active"), findsOneWidget);
     expect(find.textContaining('Next renewal: \$2.00'), findsOneWidget);
     await done(tester);
   });
 
-  testWidgets('My FlixQuest shows the member card and the invitation',
+  testWidgets('My FlixQuest shows account status but no sales invitation',
       (tester) async {
     plus =
         await tester.runAsync(() => controllerFor(_member())) as PlusController;
@@ -287,7 +285,7 @@ void main() {
         const Scaffold(
             body: Padding(padding: EdgeInsets.all(16), child: PlusCard())));
     expect(tester.takeException(), isNull);
-    expect(find.text("You're ad-free"), findsOneWidget);
+    expect(find.text("Plus is active"), findsOneWidget);
 
     await done(tester);
     plus =
@@ -299,7 +297,7 @@ void main() {
         size: const Size(320, 640),
         textScale: 1.3);
     expect(tester.takeException(), isNull);
-    expect(find.text('Subscribe to Plus to get rid of ads'), findsOneWidget);
+    expect(find.text('Manage your Plus account'), findsNothing);
     await done(tester);
   });
 
@@ -532,7 +530,7 @@ void main() {
     await pump(tester, const TvPlusScreen(), size: const Size(960, 540));
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Sign up and subscribe to Plus to get rid of ads'),
+    expect(find.text('Sign in to manage Plus'),
         findsWidgets);
     expect(find.byType(QrImageView), findsNothing);
     await done(tester);

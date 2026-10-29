@@ -959,7 +959,7 @@ class WatchProgressBar extends StatelessWidget {
 }
 
 /// [WatchProgressBar] for what's playing now, read once a second; nothing
-/// while [read] has no answer (an ad, or a stream still starting).
+/// while [read] has no answer (an intro or a stream still starting).
 class WatchLiveProgress extends StatefulWidget {
   const WatchLiveProgress({required this.read, super.key});
 

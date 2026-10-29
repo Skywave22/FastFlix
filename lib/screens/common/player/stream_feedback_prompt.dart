@@ -15,8 +15,8 @@ class StreamFeedbackAnswer {
   final String issue;
 }
 
-/// Captures the surviving navigator before the player is disposed. Ads finish
-/// first; navigating elsewhere while they run cancels the pending prompt.
+/// Captures the surviving navigator before the player is disposed. Navigating
+/// elsewhere while a pre-prompt operation runs cancels the pending prompt.
 void scheduleStreamFeedbackAfterExit(
   BuildContext playerContext, {
   required StreamFeedbackMeasurement measurement,

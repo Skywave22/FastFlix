@@ -147,7 +147,6 @@ The look copies the app's Android TV UI: **artwork first, a quiet interface, neu
 - **The TMDB proxy:** requests go through `CatalogController` (`lib/catalog/catalog_controller.dart`), which applies the user's proxy and language settings. Don't call `http.get` on TMDB URLs yourself.
 - **`RecentProvider` needs Firebase**, so it can't be built in widget tests. Put the logic in a plain class, as `UpNextBook` did, or pass data in through constructor parameters, and test that.
 - **Deep links** construct `MovieDetailPage` and `TVDetailPage` in `lib/services/deep_link_routes.dart`. Keep those class names and constructors working in phase 6. `test/home_widget_*` and `test/media_link_test.dart` must pass.
-- **Ads:** `RemoteHostedAdsBanner` placements are revenue. Move them, never delete them, keep the `placement:` strings, and never put one above the first screen of content or above a Play button. For an ad slot in a list, copy `HomeAdSlot` in `home_screen.dart`; it collapses with no gap when no ad loads.
 
 ---
 
@@ -323,7 +322,6 @@ A `MissingPluginException` from `path_provider` or the image cache is harmless i
    - **Loading:** a skeleton that matches the segment's layout (copy `HomeSkeleton`'s pulse).
    - **Failure:** a quiet message in `mutedText` plus a Retry `PillButton`. One segment failing must not break the others.
    - **Empty:** a short message, for example when there are no upcoming titles.
-6. **Ads:** one `HomeAdSlot`-style ad in Coming Soon after the third date group, with a new placement name `new_and_hot`. Never at the top. Tell the user this placement name is new, since they may need to configure it remotely.
 7. **Tab integration:**
    - attach `MobileTabController.scrollController(MobileTab.newAndHot)` to the active segment's scroll view (tapping the tab again scrolls to top);
    - a second tap resets to the Coming Soon segment (see how `SearchScreen` registers its reset);
@@ -438,7 +436,7 @@ Follow the guide's "Phase 9" section:
 Write a short report for the user. They are the app's developer; they don't need a lesson, but they do need the facts. Include:
 1. **What the screen does now:** a few bullets from the user's point of view.
 2. **Every place you departed from this file or the guide, and why.**
-3. **Anything the user must do:** configure a new ad placement, answer a design question, press R.
+3. **Anything the user must do:** answer a design question or press R.
 4. **Verification, with the real numbers:**
    - the analyze result;
    - the test tally (for example "543 passed, 2 failed: the two known failures");

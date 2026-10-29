@@ -244,7 +244,6 @@ Widget _app(
               source: source ?? _Source(),
               history: history,
               showTitleLogos: false,
-              adBuilder: (_) => const Text('AD_SLOT'),
               now: () => _now,
             ),
           ),
@@ -308,7 +307,6 @@ void main() {
       lessThan(tester.getTopLeft(find.text('starring_line')).dy),
     );
     expect(find.text('trailer'), findsOneWidget);
-    await _reach(tester, find.text('AD_SLOT'));
 
     // More Like This: both lists, each title once.
     await _reach(tester, _poster(103));
@@ -563,7 +561,6 @@ void main() {
         }
 
         expect(atStart(find.byType(DetailsPlayButton)), isTrue);
-        expect(atStart(find.text('AD_SLOT')), isTrue);
         expect(atStart(find.text('episodes')), isFalse);
         expect(atStart(find.byType(FilterChips)), isFalse);
         expect(tester.takeException(), isNull);

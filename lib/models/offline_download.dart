@@ -130,6 +130,20 @@ class OfflineDownload {
     return -1;
   }
 
+  /// An estimate only; adaptive streams may report an estimated total size.
+  Duration? get estimatedTimeRemaining {
+    if (state != OfflineDownloadState.downloading ||
+        networkRateBytesPerSecond < 1024 ||
+        !networkRateBytesPerSecond.isFinite) {
+      return null;
+    }
+    final remaining = totalBytes - bytesDownloaded;
+    if (remaining <= 0) return null;
+    final seconds = (remaining / networkRateBytesPerSecond).ceil();
+    if (seconds <= 0 || seconds > 7 * 24 * 60 * 60) return null;
+    return Duration(seconds: seconds);
+  }
+
   OfflineDownload copyWith({double? networkRateBytesPerSecond}) {
     return OfflineDownload(
       id: id,

@@ -56,10 +56,6 @@ class CachePolicies {
       return switch (path) {
         'config/bootstrap' => const CachePolicy(
             scope: 'laravel', fresh: Duration.zero, maxStale: null),
-        'ads' => const CachePolicy(
-            scope: 'laravel',
-            fresh: Duration(minutes: 5),
-            maxStale: Duration(hours: 24)),
         'messages/active' => const CachePolicy(
             scope: 'laravel',
             fresh: Duration(minutes: 15),

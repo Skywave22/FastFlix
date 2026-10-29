@@ -1,4 +1,7 @@
 # FlixQuest: Firebase & Scraper-Ads to Laravel Migration PRD
+
+> Historical planning document: the app's advertising system has since been removed.
+> Advertising instructions below no longer describe the current client.
 **Document Version:** 1.0.0  
 **Target Platform:** Laravel 11.x (PHP 8.3+) & FlixQuest Flutter App (v4.1.0+)  
 **Status:** Approved for Implementation  

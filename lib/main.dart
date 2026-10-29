@@ -11,9 +11,6 @@ import 'presentation/notifications/notification_controller.dart';
 import 'data/sources/push_messaging_client.dart';
 import 'services/in_app_messaging_service.dart';
 import 'data/sync/sync_runtime.dart';
-import 'package:visibility_detector/visibility_detector.dart';
-import 'data/ads/ad_events_controller.dart';
-import 'services/hosted_ads_repository.dart';
 import 'services/firebase_backend_config_controller.dart';
 import 'presentation/config/bootstrap_view_model.dart';
 import 'presentation/config/refresh_controller.dart';
@@ -24,7 +21,6 @@ import 'services/local_account_data.dart';
 import 'presentation/session/auth_runtime.dart';
 import 'presentation/session/session_view_model.dart';
 import 'presentation/billing/plus_controller.dart';
-import 'services/plus_navigation.dart';
 import 'services/auth_session_controller.dart';
 import 'dart:async';
 import 'dart:io';
@@ -34,8 +30,8 @@ import 'core/di/injector.dart';
 import 'core/network/network_runtime.dart';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:flixquest/flixquest_main.dart';
-import '../models/translation.dart';
-import '../provider/app_dependency_provider.dart';
+import 'models/translation.dart';
+import 'provider/app_dependency_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -222,14 +218,6 @@ void main() async {
     },
   );
   unawaited(backendConfig.start());
-  HostedAdsRepository.instance.configure(injector.adsRepository);
-  if (injector.migrationFlags.ads) {
-    // Observe each rendered frame so brief visibility interruptions reset dwell.
-    VisibilityDetectorController.instance.updateInterval = Duration.zero;
-  }
-  final adsController = injector.migrationFlags.ads
-      ? AdEventsController(injector.adsRepository)
-      : null;
   ConfigLifecycle? configController;
   if (!kDebugMode || injector.migrationFlags.config) {
     final bootstrap =
@@ -278,10 +266,8 @@ void main() async {
         .run()
         .timeout(const Duration(seconds: 10), onTimeout: () {});
     AuthSessionController.instance.initialize();
-    // Restores a paying member's cached access before the first frame, so
-    // no ad flashes up while Laravel confirms it.
+    // Restore a paying member's cached account before the first frame.
     await injector.plus.start();
-    installPlusOffer();
     await wellnessProvider.bindLaravelOwner(injector.session.ownerId);
     if (SyncRuntime.enabled) {
       await bookmarkProvider.fetchBookmarks();
@@ -369,7 +355,6 @@ void main() async {
               devicePresentation: devicePresentation,
               configController: configController,
               backendConfigController: backendConfig,
-              adsController: adsController,
               notifications: notifications,
               firebaseSession: firebaseSession,
             ),

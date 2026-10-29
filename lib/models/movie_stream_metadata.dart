@@ -9,8 +9,6 @@ class MovieStreamMetadata {
   String? releaseDate;
   List<String> genres;
 
-  /// TMDB genre ids, when the caller has them; they settle whether the
-  /// movie is ad-free without asking TMDB.
   List<int>? genreIds;
   List<String> languages;
   List<String> countries;

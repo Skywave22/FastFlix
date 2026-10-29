@@ -17,7 +17,7 @@ class PlaybackAction extends StatefulWidget {
 
   static final _pending = Expando<bool>('pending playback');
 
-  /// The lock is taken synchronously, before connectivity, metadata, ads, or
+  /// The lock is taken synchronously, before connectivity, metadata, or
   /// configuration can yield. Inactive routes cannot start another player.
   static Future<void> run(
     BuildContext context,

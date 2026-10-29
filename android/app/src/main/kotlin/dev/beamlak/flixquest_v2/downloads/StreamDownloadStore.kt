@@ -38,7 +38,8 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.ExecutorService
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.Executors
 
 @UnstableApi
@@ -46,7 +47,15 @@ class StreamDownloadStore private constructor(context: Context) {
     private val appContext = context.applicationContext
     private val databaseProvider = StandaloneDatabaseProvider(appContext)
     private val downloadIndex = DefaultDownloadIndex(databaseProvider)
-    private val downloadExecutor: ExecutorService = Executors.newFixedThreadPool(4)
+    private val settingsStore = DownloadSettingsStore(appContext)
+    private var downloadSettings = settingsStore.read()
+    // Media3 runs HLS/DASH segment requests on this shared, bounded pool.
+    private val downloadExecutor = ThreadPoolExecutor(
+        downloadSettings.segments, downloadSettings.segments, 0L, TimeUnit.MILLISECONDS,
+        LinkedBlockingQueue<Runnable>(),
+    )
+    // Preparing a new download must not wait behind long-running segments.
+    private val preparationExecutor = Executors.newFixedThreadPool(2)
     private val subtitleDirectory = File(appContext.filesDir, "offline_subtitles")
 
     private val recovery = DownloadRecoveryState(File(appContext.filesDir, "offline_requests"))
@@ -74,9 +83,27 @@ class StreamDownloadStore private constructor(context: Context) {
             )
         },
     ).apply {
-        maxParallelDownloads = 2
-        requirements = Requirements(Requirements.NETWORK)
+        maxParallelDownloads = downloadSettings.parallelDownloads
+        minRetryCount = downloadSettings.retryCount
+        requirements = requirementsFor(downloadSettings)
     }
+
+    fun getDownloadSettings(): Map<String, Any> = downloadSettings.toMap()
+
+    fun updateDownloadSettings(values: Map<*, *>): Map<String, Any> {
+        val next = DownloadSettings.fromMap(values)
+        settingsStore.write(next)
+        downloadSettings = next
+        resizeSegmentPool(downloadExecutor, next.segments)
+        downloadManager.maxParallelDownloads = next.parallelDownloads
+        downloadManager.minRetryCount = next.retryCount
+        downloadManager.requirements = requirementsFor(next)
+        return next.toMap()
+    }
+
+    private fun requirementsFor(settings: DownloadSettings): Requirements = Requirements(
+        Requirements.NETWORK or (if (settings.unmeteredOnly) Requirements.NETWORK_UNMETERED else 0),
+    )
 
     fun prepareRequest(
         arguments: Map<*, *>,
@@ -154,7 +181,7 @@ class StreamDownloadStore private constructor(context: Context) {
                         "DownloadHelper prepared without an application looper."
                     },
                 )
-                downloadExecutor.execute {
+                preparationExecutor.execute {
                     try {
                         downloadSubtitle(arguments, id, metadata)
                     } catch (error: Exception) {

@@ -35,8 +35,6 @@ void main() {
           'branding',
           'updates',
           'network',
-          'ads',
-          'banners',
           'occasional_theme'
         ]));
     final etag = bootstrap.headers.value('etag');
@@ -54,9 +52,6 @@ void main() {
     expect(cachedBootstrap.statusCode, 200);
     expect(cachedBootstrap.data, bootstrap.data);
     expect(cachedBootstrap.extra['cache'], 'revalidated');
-    final ads = await client.get<Map<String, dynamic>>('ads');
-    expect(ads.data!['success'], isTrue);
-    expect(ads.data!['ads'], isA<List>());
     final messages = await client.get<Map<String, dynamic>>('messages/active');
     expect(messages.data!['success'], isTrue);
     expect(messages.data!['messages'], isA<List>());

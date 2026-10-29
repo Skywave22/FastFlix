@@ -22,13 +22,11 @@ import '../../services/daddylive_service.dart';
 import '../../services/media_link.dart';
 // EthioTV source (commented out - disabled):
 // import '../../services/ethio_sports_service.dart';
-import '../../services/adsterra_playback_ads_service.dart';
 import '../../services/analytics_service.dart';
 import '../../mobile/widgets/filter_chips.dart';
 import '../../mobile/widgets/page_kit.dart';
 import '../../mobile/widgets/pill_button.dart';
 import 'live_player.dart';
-import '../../widgets/hosted_ads_banner.dart';
 
 enum _ChannelScope { all, favorites, recent }
 
@@ -71,7 +69,6 @@ class _ChannelListState extends State<ChannelList> {
   String? _selectedCategory;
   String? _letter;
   String? _resolvingId;
-  PlaybackAdPreload? _adPreload;
   String _query = '';
   String? _error;
   bool _loading = true;
@@ -179,7 +176,6 @@ class _ChannelListState extends State<ChannelList> {
 
   @override
   void dispose() {
-    _adPreload?.dispose();
     _highlightTimer?.cancel();
     _scrollController.dispose();
     _searchAnalyticsDebounce?.cancel();
@@ -429,8 +425,6 @@ class _ChannelListState extends State<ChannelList> {
   Future<void> _play(Channel channel) async {
     if (_resolvingId != null) return;
     setState(() => _resolvingId = channel.id);
-    _adPreload =
-        AdsterraPlaybackAdsService.instance.preloadStreamFound(context);
     final stopwatch = Stopwatch()..start();
     try {
       final stream = await _api().getStream(channel.id);
@@ -449,12 +443,6 @@ class _ChannelListState extends State<ChannelList> {
         source: _mode.name,
       );
       if (!mounted) return;
-      // The channel works: the same stream-found popup as movies, first.
-      final proceed = await AdsterraPlaybackAdsService.instance
-          .streamFound(context, preload: _adPreload);
-      _adPreload?.dispose();
-      _adPreload = null;
-      if (!proceed || !mounted) return;
       final autoFullScreen = context.read<SettingsProvider>().defaultViewMode;
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
@@ -503,8 +491,6 @@ class _ChannelListState extends State<ChannelList> {
         );
       }
     } finally {
-      _adPreload?.dispose();
-      _adPreload = null;
       if (mounted) setState(() => _resolvingId = null);
     }
   }
@@ -670,7 +656,6 @@ class _ChannelListState extends State<ChannelList> {
         controller: _scrollController,
         slivers: <Widget>[
           SliverToBoxAdapter(child: _buildHeader()),
-          _bannerSliver(_headerPlacement),
           if (_mode == _LiveTvMode.channels)
             ..._buildChannelSlivers()
           else
@@ -683,35 +668,6 @@ class _ChannelListState extends State<ChannelList> {
         ],
       ),
     );
-  }
-
-  /// Stable placement names for centrally configured Live TV banners.
-  static const _headerPlacement = 'live_tv_top';
-  static const _listPlacements = <String>[
-    'live_tv_list_a',
-    'live_tv_list_b',
-    'live_tv_list_c',
-  ];
-
-  /// Live TV uses the larger rectangle variant by default.
-  Widget _bannerSliver(String placement) => SliverToBoxAdapter(
-        child: RemoteHostedAdsBanner(
-          placement: placement,
-          variant: HostedBannerVariant.tall,
-        ),
-      );
-
-  /// Splits [items] into [parts] near-equal slices so banners can sit between
-  /// them. Empty slices are kept so the banner positions never shift.
-  static List<List<T>> _chunk<T>(List<T> items, int parts) {
-    final size = (items.length / parts).ceil();
-    return <List<T>>[
-      for (var i = 0; i < parts; i++)
-        items.sublist(
-          math.min(i * size, items.length),
-          math.min((i + 1) * size, items.length),
-        ),
-    ];
   }
 
   void _clearSearch() {
@@ -772,15 +728,7 @@ class _ChannelListState extends State<ChannelList> {
           ),
         );
 
-    // The header banner sits above; these three break the list up.
-    final chunks = _chunk(visible, _listPlacements.length + 1);
-    return <Widget>[
-      grid(chunks[0]),
-      for (var i = 0; i < _listPlacements.length; i++) ...<Widget>[
-        _bannerSliver(_listPlacements[i]),
-        grid(chunks[i + 1]),
-      ],
-    ];
+    return <Widget>[grid(visible)];
   }
 
   List<Widget> _buildScheduleSlivers() {
@@ -807,10 +755,7 @@ class _ChannelListState extends State<ChannelList> {
     }
     final gutter = AppSpace.gutter(context);
     final palette = AppPalette.of(context);
-    // The header banner sits above; spread the rest after the first
-    // sections, then append any slots the schedule is too short to reach.
     final slivers = <Widget>[];
-    var banner = 0;
     for (final section in sections) {
       slivers.add(SliverReadableWidth(maxWidth: 900, slivers: <Widget>[
         SliverToBoxAdapter(
@@ -840,14 +785,6 @@ class _ChannelListState extends State<ChannelList> {
           ),
         ),
       ]));
-      if (banner < _listPlacements.length) {
-        slivers.add(_bannerSliver(_listPlacements[banner]));
-      }
-      banner++;
-    }
-    while (banner < _listPlacements.length) {
-      slivers.add(_bannerSliver(_listPlacements[banner]));
-      banner++;
     }
     return slivers;
   }

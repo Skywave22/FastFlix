@@ -166,7 +166,6 @@ void main() {
     await tester.tap(find.text('show_titles'));
     await tester.pumpAndSettle();
     final results = opened.single;
-    expect(results.adPlacement, 'discover_movies');
     expect(results.title, 'discover_movies');
     expect(results.id, contains('with_genres=35'));
     expect(results.id, contains('vote_count.gte=1000'));

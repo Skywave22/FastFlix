@@ -537,7 +537,7 @@ class _StatusPanel extends StatelessWidget {
             ],
             Text(
               plus.adFree
-                  ? tr('plus_youre_ad_free')
+                  ? tr('plus_membership_active')
                   : plus.signedIn
                       ? tr('plus_cta_member')
                       : tr('plus_cta_guest'),
@@ -554,7 +554,7 @@ class _StatusPanel extends StatelessWidget {
               until != null
                   ? renewal?.autoRenew == true
                       ? tr('plus_renews_on', args: [formatDay(context, until)])
-                      : tr('plus_ad_free_until',
+                      : tr('plus_membership_until',
                           args: [formatDay(context, until)])
                   : tr('plus_price_line',
                       args: [formatPrice(price), '$interval']),
@@ -584,9 +584,6 @@ class _StatusPanel extends StatelessWidget {
                             '${discount.periodsRemaining}'
                           ]),
                   ),
-                PlusChip(
-                    icon: PhosphorIcons.prohibit(),
-                    label: tr('plus_tv_chip_no_ads')),
                 PlusChip(
                     icon: PhosphorIcons.deviceMobile(),
                     label: tr('plus_tv_chip_devices')),

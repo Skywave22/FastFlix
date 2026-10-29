@@ -1,24 +1,18 @@
 import 'package:flixquest/constants/app_constants.dart';
-import 'package:flixquest/data/ads/content_ads.dart';
 import 'package:flixquest/models/recently_watched.dart';
 import 'package:flixquest/models/tv.dart';
 import 'package:flixquest/models/videos.dart';
 import 'package:flixquest/provider/app_dependency_provider.dart';
 import 'package:flixquest/provider/recently_watched_provider.dart';
 import 'package:flixquest/provider/settings_provider.dart';
-import 'package:flixquest/services/hosted_ads_repository.dart';
-import 'package:flixquest/services/device_presentation_service.dart';
 import 'package:flixquest/services/video_launcher.dart';
 import 'package:flixquest/tv/controllers/tv_media_details_controller.dart';
 import 'package:flixquest/tv/models/tv_media_item.dart';
 import 'package:flixquest/tv/screens/tv_media_details_screen.dart';
-import 'package:flixquest/widgets/network_banner_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import 'support/tv_localization.dart';
 
-import 'support/fake_adsterra_webview.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -220,71 +214,13 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     sharedPrefsSingleton = await SharedPreferences.getInstance();
-    // Titles without genre ids are asked about; these have none of note.
-    ContentAds.lookup = (_, __) async => const <int>[];
   });
 
-  tearDown(ContentAds.reset);
-
-  testWidgets(
-    'TV details lays out the enabled top-right banner slot',
-    (tester) async {
-      final device = DevicePresentationService.instance;
-      WebViewPlatform.instance = FakeAdsterraWebViewPlatform();
-      device.isTelevision = true;
-      HostedAdsRepository.instance.useFetcherForTesting((_) async => []);
-      addTearDown(() {
-        device.isTelevision = false;
-        HostedAdsRepository.instance.useFetcherForTesting((_) async => []);
-      });
-      final dependencies = AppDependencyProvider()
-        ..setBannerAdsConfig(testAdsterraConfig());
-      await _pumpDetails(tester, dependencies: dependencies);
-
-      final banner = find.byType(NetworkBannerWidget);
-      expect(banner, findsOneWidget);
-      expect(
-          tester.widget<NetworkBannerWidget>(banner).placement, 'title_detail');
-      final slot = tester.widget<Positioned>(
-        find.ancestor(of: banner, matching: find.byType(Positioned)).first,
-      );
-      expect(slot.right, isNotNull);
-      expect(slot.top, isNotNull);
-      expect(slot.width, 360);
-      expect(tester.takeException(), isNull);
-    },
-    variant: const TargetPlatformVariant({TargetPlatform.android}),
-  );
-
-  testWidgets(
-    'a Kids series shows no banner on its TV page',
-    (tester) async {
-      final device = DevicePresentationService.instance;
-      WebViewPlatform.instance = FakeAdsterraWebViewPlatform();
-      device.isTelevision = true;
-      var hostedRequests = 0;
-      HostedAdsRepository.instance.useFetcherForTesting((_) async {
-        hostedRequests++;
-        return [];
-      });
-      addTearDown(() {
-        device.isTelevision = false;
-        HostedAdsRepository.instance.useFetcherForTesting((_) async => []);
-      });
-      final dependencies = AppDependencyProvider()
-        ..setBannerAdsConfig(testAdsterraConfig());
-      await _pumpDetails(
-        tester,
-        item: _item(42, genreIds: <int>[16, FamilyGenres.kids]),
-        dependencies: dependencies,
-      );
-
-      expect(find.byType(NetworkBannerWidget), findsNothing);
-      expect(hostedRequests, 0);
-      expect(find.text('Play S1:E1'), findsOneWidget);
-    },
-    variant: const TargetPlatformVariant({TargetPlatform.android}),
-  );
+  testWidgets('TV details open directly for family content', (tester) async {
+    await _pumpDetails(tester, item: _item(42, genreIds: <int>[16, 10762]));
+    expect(find.text('Play S1:E1'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   group('TvResumePoint', () {
     test('resumes a movie part way through', () {

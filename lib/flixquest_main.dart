@@ -6,7 +6,6 @@ import 'widgets/plus/plus_coupon_prompt.dart';
 import 'presentation/notifications/notification_controller.dart';
 import 'data/sync/sync_runtime.dart';
 import 'services/bookmark_sync_service.dart';
-import 'data/ads/ad_events_controller.dart';
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -23,7 +22,6 @@ import 'provider/app_dependency_provider.dart';
 import 'provider/recently_watched_provider.dart';
 import 'provider/settings_provider.dart';
 import 'screens/user/user_state.dart';
-import 'widgets/ad_block_warmup.dart';
 import 'widgets/occasional_effect_overlay.dart';
 import 'widgets/app_presentation.dart';
 import 'provider/bookmark_provider.dart';
@@ -52,7 +50,6 @@ class FlixQuest extends StatefulWidget {
       required this.devicePresentation,
       this.configController,
       this.backendConfigController,
-      this.adsController,
       this.notifications,
       this.firebaseSession,
       super.key});
@@ -64,7 +61,6 @@ class FlixQuest extends StatefulWidget {
   final DevicePresentation devicePresentation;
   final ConfigLifecycle? configController;
   final FirebaseBackendConfigController? backendConfigController;
-  final AdEventsController? adsController;
   final NotificationController? notifications;
   final FirebaseSessionBridge? firebaseSession;
 
@@ -117,7 +113,7 @@ class _FlixQuestState extends State<FlixQuest>
       }
     } catch (error) {
       if (kDebugMode) {
-        debugPrint('[PlaybackAdConfig] reload refresh failed: $error');
+        debugPrint('[Config] reload refresh failed: $error');
       }
     }
   }
@@ -145,7 +141,6 @@ class _FlixQuestState extends State<FlixQuest>
       onError: (Object _) {},
     );
     _initConfig();
-    unawaited(widget.adsController?.boot());
     fileDelete();
     InAppMessagingService.initialize(
         onConfigHint: widget.configController?.onPushData,
@@ -204,7 +199,6 @@ class _FlixQuestState extends State<FlixQuest>
     unawaited(widget.backendConfigController?.resume());
     unawaited(widget.configController?.onResume());
     unawaited(_firebaseConfig?.resume());
-    unawaited(widget.adsController?.onResume());
     unawaited(widget.notifications?.onResume());
     unawaited(widget.firebaseSession?.run());
     // An offline guest gets its tracked account once the network is back.
@@ -231,7 +225,6 @@ class _FlixQuestState extends State<FlixQuest>
     _firebaseConfig?.dispose();
     widget.backendConfigController?.dispose();
     widget.configController?.dispose();
-    unawaited(widget.adsController?.dispose());
     InAppMessagingService.dispose();
     widget.notifications?.dispose();
     super.dispose();
@@ -346,11 +339,9 @@ class _FlixQuestState extends State<FlixQuest>
                     ),
                   ),
                   theme: appTheme,
-                  home: AdBlockWarmup(
-                    child: UserState(
-                      key: ValueKey<DevicePresentation>(devicePresentation),
-                      devicePresentation: devicePresentation,
-                    ),
+                  home: UserState(
+                    key: ValueKey<DevicePresentation>(devicePresentation),
+                    devicePresentation: devicePresentation,
                   ),
                 );
                 // Wraps the app itself: it has to hear about system Backs

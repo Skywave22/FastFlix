@@ -162,12 +162,6 @@ void main() {
             headers: {'If-None-Match': bootstrap.headers.value('etag')},
             validateStatus: (status) => status == 304));
     expect(unchanged.statusCode, 304);
-    final ads = await anonymous.get<dynamic>('ads');
-    final sameAds = await anonymous.get<dynamic>('ads',
-        options: Options(
-            headers: {'If-None-Match': ads.headers.value('etag')},
-            validateStatus: (status) => status == 304));
-    expect(sameAds.statusCode, 304);
 
     final device = DeviceRepository(phone);
     expect(

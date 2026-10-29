@@ -164,26 +164,26 @@ void main() {
     adapter.enqueueJson({'owner': 'a'});
     adapter.enqueueJson({'owner': 'b'});
     expect(
-        (await client.get<Map<String, dynamic>>('ads', options: owner('a')))
+        (await client.get<Map<String, dynamic>>('messages/active', options: owner('a')))
             .data!['owner'],
         'a');
     expect(
-        (await client.get<Map<String, dynamic>>('ads', options: owner('b')))
+        (await client.get<Map<String, dynamic>>('messages/active', options: owner('b')))
             .data!['owner'],
         'b');
     expect(
-        (await client.get<Map<String, dynamic>>('ads', options: owner('a')))
+        (await client.get<Map<String, dynamic>>('messages/active', options: owner('a')))
             .data!['owner'],
         'a');
     await cache.clearScope('user:a');
     expect(
-        (await client.get<Map<String, dynamic>>('ads', options: owner('b')))
+        (await client.get<Map<String, dynamic>>('messages/active', options: owner('b')))
             .data!['owner'],
         'b');
     await cache.clearScope('user');
     expect(await cache.sizeBytes(), 0);
     adapter.enqueueJson({'owner': 'unscoped'});
-    await client.get<Object>('ads',
+    await client.get<Object>('messages/active',
         options: Options(headers: {'Authorization': 'Bearer secret'}));
     expect(await cache.sizeBytes(), 0);
   });

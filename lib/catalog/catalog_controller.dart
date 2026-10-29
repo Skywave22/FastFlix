@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import '../api/endpoints.dart';
-import '../data/ads/content_ads.dart';
 import '../controllers/bookmark_database_controller.dart';
 import '../functions/network.dart';
 import '../models/genres.dart';
@@ -9,6 +8,7 @@ import '../provider/settings_provider.dart';
 import '../widgets/common_widgets.dart'
     show AppStreamingService, appStreamingServices;
 import 'media_item.dart';
+import 'anime_genre.dart';
 
 /// The TMDB lists behind a Movies or Series page's rows, and TV Home's.
 enum CatalogList {
@@ -71,18 +71,10 @@ class MediaCollection {
     required this.kicker,
     required this.loadPage,
     this.logoAsset,
-    this.adPlacement,
-    this.adFree = false,
   });
 
   final String id;
   final String title;
-
-  /// The hosted ad placement the collection's page reports, if it shows one.
-  final String? adPlacement;
-
-  /// A Kids or Family genre: its page shows no ads, Plus or not.
-  final bool adFree;
 
   /// What kind of collection it is, shown above the title.
   final String kicker;
@@ -157,8 +149,8 @@ class CatalogController {
           if (i < series.length) series[i],
         ],
       ].take(10).toList(growable: false),
-      movieGenres: named(results[2] as List<Genres>),
-      seriesGenres: named(results[3] as List<Genres>),
+      movieGenres: withAnimeGenre(named(results[2] as List<Genres>), label: tr('anime')),
+      seriesGenres: withAnimeGenre(named(results[3] as List<Genres>), label: tr('anime')),
     );
   }
 
@@ -239,9 +231,10 @@ class CatalogController {
       topRated: lists[2],
       fresh: lists[3],
       serviceShelves: await shelves,
-      genres: (await genres)
-          .where((genre) => genre.genreID != null && genre.genreName != null)
-          .toList(growable: false),
+      genres: withAnimeGenre(
+        (await genres).where((genre) => genre.genreID != null && genre.genreName != null),
+        label: tr('anime'),
+      ),
     );
   }
 
@@ -281,10 +274,6 @@ class CatalogController {
     return MediaCollection(
       id: '${kind.name}-genre-${genre.genreID}',
       title: genre.genreName!,
-      adFree: FamilyGenres.includes(
-        series: !isMovie,
-        genreIds: <int>[genre.genreID!],
-      ),
       kicker: tr(isMovie ? 'tv_movie_genre' : 'tv_series_genre').toUpperCase(),
       loadPage: (page) => _fetchPage(
         page,
@@ -312,13 +301,11 @@ class CatalogController {
     required String kicker,
     required SettingsProvider settings,
     required AppDependencyProvider dependencies,
-    String? adPlacement,
   }) {
     return MediaCollection(
       id: id,
       title: title,
       kicker: kicker,
-      adPlacement: adPlacement,
       loadPage: (page) => _fetchPage(page, () {
         final uri = Uri.parse(url);
         return _fetch(
@@ -400,9 +387,10 @@ class CatalogController {
       settings.enableProxy,
       dependencies.tmdbProxy,
     ));
-    return genres
-        .where((genre) => genre.genreID != null && genre.genreName != null)
-        .toList(growable: false);
+    return withAnimeGenre(
+      genres.where((genre) => genre.genreID != null && genre.genreName != null),
+      label: tr('anime'),
+    );
   }
 
   static AppStreamingService? serviceFor(int providerId) {

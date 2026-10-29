@@ -28,7 +28,6 @@ class BootstrapViewModel extends ChangeNotifier {
       ...value.branding.toJson(),
       ...value.updates.toJson(),
       ...value.network.toJson(),
-      ...value.ads.toJson(),
       'flixquest_api_instances':
           jsonEncode(value.network.flixquestApiInstances),
     }, dependencies);
@@ -38,8 +37,6 @@ class BootstrapViewModel extends ChangeNotifier {
     final logo = value.branding.appLogoUrl.trim();
     dependencies.flixQuestLogo =
         logo.isNotEmpty ? logo : value.branding.cinemaxLogo;
-    dependencies.setBannerConfigs(
-        {for (final banner in value.banners) banner.key: banner.toDomain()});
     dependencies.setFlixquestApiConfig(
         instances: value.network.flixquestApiInstances,
         url: value.network.flixquestApiUrlV2);

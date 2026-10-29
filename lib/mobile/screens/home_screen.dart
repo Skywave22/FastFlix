@@ -26,7 +26,6 @@ import '../../services/ambient_theme_service.dart';
 import '../../widgets/app_logo.dart';
 import '../../widgets/common_widgets.dart'
     show AppStreamingService, appStreamingServices;
-import '../../widgets/hosted_ads_banner.dart';
 import '../app/mobile_tabs.dart';
 import '../collections.dart';
 import '../my_list.dart';
@@ -38,7 +37,6 @@ import '../widgets/hero_card.dart';
 import '../widgets/media_art.dart';
 import '../widgets/media_rows.dart';
 import '../widgets/page_kit.dart' show EmptyState;
-import '../widgets/plus_card.dart';
 import '../widgets/skeletons.dart';
 import 'collection_screen.dart';
 import 'flix_ai_screen.dart';
@@ -261,16 +259,13 @@ class _HomeScreenState extends State<HomeScreen>
 
   MediaCollection _translated(
     MediaCollection collection,
-    String kicker, {
-    String? adPlacement,
-  }) =>
+    String kicker,
+  ) =>
       MediaCollection(
         id: collection.id,
         title: collection.title,
         kicker: kicker.toUpperCase(),
         logoAsset: collection.logoAsset,
-        adPlacement: adPlacement ?? collection.adPlacement,
-        adFree: collection.adFree,
         loadPage: collection.loadPage,
       );
 
@@ -299,8 +294,6 @@ class _HomeScreenState extends State<HomeScreen>
         kicker: tr(kind == MediaKind.movie ? 'movies' : 'series').toUpperCase(),
         settings: settings,
         dependencies: dependencies,
-        // The placements of the old Movies and Series list pages.
-        adPlacement: kind == MediaKind.movie ? 'movie_list' : 'tv_list',
       ),
     );
   }
@@ -326,10 +319,6 @@ class _HomeScreenState extends State<HomeScreen>
                     dependencies: dependencies,
                   ),
                   tr('streaming_services'),
-                  // The placements of the old streaming service pages.
-                  adPlacement: kind == MediaKind.movie
-                      ? 'streaming_movies'
-                      : 'streaming_tv',
                 ),
               ),
           ],
@@ -389,10 +378,6 @@ class _HomeScreenState extends State<HomeScreen>
         onOpenService: _openService,
         onOpenList: _openList,
       );
-      // Now and then, a Plus invitation a few rows down (never the top).
-      if (_filter == HomeFilter.all && rows.length > 3) {
-        rows.insert(3, const HomeOptionalRow(child: PlusSpotlight()));
-      }
       content = <Widget>[
         SliverFadeTransition(
           opacity: _fade,
@@ -735,11 +720,7 @@ String? _releaseBadge(BuildContext context, MediaItem item) {
 /// Home's rows for a loaded feed, top to bottom: the hero, then what to
 /// watch next. Under All each chart comes as a pair, movies then series, so
 /// no catalogue row mixes the two; only the viewer's own rows (Continue
-/// Watching, My List) hold both. Three ads are spread down the page: a
-/// banner directly under the hero, a medium rectangle after Trending (the
-/// size advertisers bid on most) and a banner before the genre rows. Each
-/// Home tab reports its own placement ids (`home_all_*`, `home_movies_*`,
-/// `home_series_*`), shared by the remote banner placement catalog.
+/// Watching, My List) hold both.
 @visibleForTesting
 List<Widget> homeRows(
   BuildContext context, {
@@ -796,16 +777,6 @@ List<Widget> homeRows(
         onSeeAll: () => onOpenList(kind, list, title),
       );
 
-  // One ad unit per Home tab so each tab's slots report separately.
-  final adBase = switch (filter) {
-    HomeFilter.all => 'home_all',
-    HomeFilter.movies => 'home_movies',
-    HomeFilter.series => 'home_series',
-  };
-  HomeAdSlot adSlot(String slot, {bool tall = false}) => HomeAdSlot(
-        placement: '${adBase}_$slot',
-        variant: tall ? HostedBannerVariant.tall : HostedBannerVariant.standard,
-      );
   return <Widget>[
     // The update notice is a fixed Home slot above these feed rows.
     if (heroes.isNotEmpty)
@@ -815,8 +786,6 @@ List<Widget> homeRows(
         genresFor: genresFor,
         onShown: onHeroShown,
       ),
-    // Directly below the hero.
-    adSlot('hero'),
     if (shownContinue.isNotEmpty)
       ContinueRow(title: tr('continue_watching'), items: shownContinue),
     for (final kind in kinds)
@@ -833,7 +802,6 @@ List<Widget> homeRows(
           titled(kind, 'trending_movies_week', 'trending_series_week'),
           trending[kind]!,
         ),
-    adSlot('trending', tall: true),
     if (shownMyList.isNotEmpty)
       PosterRow(
         title: tr('my_list'),
@@ -892,7 +860,6 @@ List<Widget> homeRows(
         feed.of(MediaKind.movie).upcoming,
         badgeFor: (item) => _releaseBadge(context, item),
       ),
-    adSlot('genres'),
     // FlixQuest's categorized feed: a few genres at random, each laid out its
     // own way, labelled with its kind where both are on show.
     for (final category in feed.categories)
@@ -908,7 +875,7 @@ List<Widget> homeRows(
   ];
 }
 
-/// A row that may have nothing to show (an ad, the update notice): the gap
+/// A row that may have nothing to show (such as the update notice): the gap
 /// under it appears only when it does.
 class HomeOptionalRow extends StatelessWidget {
   const HomeOptionalRow({required this.child, super.key});
@@ -920,35 +887,7 @@ class HomeOptionalRow extends StatelessWidget {
       _GapBelowIfShown(gap: AppSpace.rowGap, child: child);
 }
 
-/// A hosted ad between Home's rows.
-class HomeAdSlot extends HomeOptionalRow {
-  HomeAdSlot({
-    required this.placement,
-    this.variant = HostedBannerVariant.standard,
-    super.key,
-  }) : super(
-          child: _HostedAd(placement: placement, variant: variant),
-        );
-
-  final String placement;
-  final HostedBannerVariant variant;
-}
-
-class _HostedAd extends StatelessWidget {
-  const _HostedAd({required this.placement, required this.variant});
-
-  final String placement;
-  final HostedBannerVariant variant;
-
-  @override
-  Widget build(BuildContext context) => RemoteHostedAdsBanner(
-        placement: placement,
-        variant: variant,
-      );
-}
-
-/// Puts [gap] under [child] only when the child takes up room, so an ad slot
-/// with no ad leaves no hole between rows.
+/// Puts [gap] under [child] only when the child takes up room.
 class _GapBelowIfShown extends SingleChildRenderObjectWidget {
   const _GapBelowIfShown({required this.gap, super.child});
 

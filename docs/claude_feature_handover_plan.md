@@ -1,5 +1,8 @@
 # Claude handover: TV browsing, Fire TV playback, family ads, videos, playlists, and tablets
 
+> Historical plan: all advertising has since been removed from the client.
+> The ad-related investigation, instructions and tests below are obsolete.
+
 Prepared: 24 October 2026 (Africa/Addis_Ababa).
 
 Status: investigation and implementation plan only. No application code or backend schema was changed for this handover. Checkboxes below are future work, not completed features.

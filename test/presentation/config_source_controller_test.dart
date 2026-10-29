@@ -21,8 +21,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/fake_dio.dart';
-import '../support/fake_adsterra_webview.dart';
-import 'package:flixquest/models/adsterra_playback_ads_config.dart';
 
 class FakeFirebaseConfigSource implements FirebaseConfigSource {
   final hints = StreamController<void>.broadcast(sync: true);
@@ -110,31 +108,11 @@ void main() {
       'new runtime settings survive source selection and offline cache, then reset on switch',
       () async {
     firebase.payload = firebaseConfigSnapshot({
-      'banner_ad_network': 'clickadu',
-      'clickadu_banner_enabled': 'true',
-      'clickadu_tv_enabled': 'true',
-      'clickadu_banners': testClickaduCatalog,
-      'ad_block_gate_enabled': 'true',
-      'download_popup_enabled': 'true',
-      'download_popup_frequency_minutes': '7',
-      'player_exit_popup_relaunch_enabled': 'true',
-      'player_exit_popup_relaunch_max_hours': '12',
+      'ad_block_gate_enabled': 'true', // Legacy settings must not block playback.
       'telegram_channel_url': 'https://t.me/flixquest',
       'app_download_url_arm64_v8a': 'https://download.test/arm64.apk',
     });
     void expectModern() {
-      expect(provider.remoteConfigApplied, isTrue);
-      expect(provider.bannerAdNetwork, 'clickadu');
-      expect(provider.bannerAdsForPlacement('downloads')?.network,
-          AdNetwork.clickadu);
-      expect(
-          provider
-              .bannerAdsForPlacement('downloads', television: true)
-              ?.network,
-          AdNetwork.clickadu);
-      expect(provider.adBlockGateEnabled, isTrue);
-      expect(
-          provider.popupTrigger(PlaybackAdStage.download)?.frequencyMinutes, 7);
       expect(provider.telegramChannelUrl.toString(), 'https://t.me/flixquest');
       expect(provider.abiDownloadUrls['arm64-v8a'],
           'https://download.test/arm64.apk');
@@ -155,15 +133,7 @@ void main() {
       'success': true,
       'data': {
         'config_source': 'laravel',
-        'ads': {
-          'banner_ad_network': 'clickadu',
-          'clickadu_banner_enabled': true,
-          'clickadu_tv_enabled': true,
-          'clickadu_banners': jsonDecode(testClickaduCatalog),
-          'download_popup_enabled': true,
-          'download_popup_frequency_minutes': 7,
-        },
-        'features': {'ad_block_gate_enabled': true},
+        'ads': {'banner_ad_network': 'clickadu'}, // Ignored legacy config.
         'network': {'telegram_channel_url': 'https://t.me/flixquest'},
         'updates': {
           'app_download_url_arm64_v8a': 'https://download.test/arm64.apk'
@@ -181,9 +151,6 @@ void main() {
 
     respond('laravel');
     await controller.onResume();
-    expect(provider.bannerAdsForPlacement('downloads'), isNull);
-    expect(provider.adBlockGateEnabled, isFalse);
-    expect(provider.popupTrigger(PlaybackAdStage.download), isNull);
     expect(provider.telegramChannelUrl, isNull);
     expect(provider.abiDownloadUrls, isEmpty);
   });
@@ -451,7 +418,7 @@ void main() {
   });
 
   test(
-      'switching snapshots replaces network and phone/TV banners while preserving user theme preferences',
+      'switching snapshots replaces network while preserving user theme preferences',
       () async {
     final theme = {
       'enabled': true,
@@ -502,11 +469,8 @@ void main() {
     expect(provider.selectedOccasionalThemeId, 'christmas');
     expect(provider.activeOccasionalTheme?.id, 'christmas');
     expect(provider.shouldShowOccasionalEffects, isFalse);
-    expect(provider.bannerConfigFor('hosted').enabled, isTrue);
     respond('firebase');
     await controller.onResume();
-    expect(provider.bannerConfigFor('hosted').enabled, isFalse);
-    expect(provider.bannerConfigFor('hosted').placements, ['home', 'home_tv']);
     expect(provider.activeOccasionalTheme?.id, 'christmas');
     expect(provider.shouldShowOccasionalEffects, isFalse);
   });

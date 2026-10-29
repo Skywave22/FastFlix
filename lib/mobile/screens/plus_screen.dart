@@ -215,23 +215,6 @@ class _PlusScreenState extends State<PlusScreen> {
               const SizedBox(height: AppSpace.xxl),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: gutter),
-                child: SettingsGroup(
-                  title: tr('plus_what_you_get'),
-                  children: <Widget>[
-                    for (final (icon, label) in <(IconData, String)>[
-                      (PhosphorIcons.prohibit(), 'plus_benefit_banners'),
-                      (PhosphorIcons.playCircle(), 'plus_benefit_popups'),
-                      (PhosphorIcons.filmSlate(), 'plus_benefit_video'),
-                      (PhosphorIcons.shieldCheck(), 'plus_benefit_blocker'),
-                      (PhosphorIcons.television(), 'plus_benefit_devices'),
-                    ])
-                      ListRow(icon: icon, label: tr(label), showsNext: false),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpace.xxl),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: gutter),
                 child:
                     _HowItWorks(price: _price(plus), interval: _interval(plus)),
               ),
@@ -434,7 +417,7 @@ class _Hero extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(
                         active
-                            ? tr('plus_youre_ad_free')
+                            ? tr('plus_membership_active')
                             : plus.signedIn
                                 ? tr('plus_cta_member')
                                 : tr('plus_cta_guest'),
@@ -449,7 +432,7 @@ class _Hero extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         active && until != null
-                            ? tr('plus_ad_free_until',
+                            ? tr('plus_membership_until',
                                 args: [formatDay(context, until)])
                             : tr('plus_price_line',
                                 args: [formatPrice(price), '$interval']),

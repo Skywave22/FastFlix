@@ -14,7 +14,7 @@ import '../../services/analytics_service.dart';
 import '../../services/offline_download_service.dart';
 import '../../ui_components/app_ui_components.dart';
 import 'offline_player_screen.dart';
-import '../../widgets/hosted_ads_banner.dart';
+import 'download_settings_sheet.dart';
 import '../../widgets/playback_action.dart';
 
 class DownloadsScreen extends StatelessWidget {
@@ -62,17 +62,17 @@ class DownloadsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-              child: Text(
-                tr('downloads'),
-                style: AppType.scaled(context, AppType.pageTitle)
-                    .copyWith(color: palette.foreground),
-              ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 4),
+              child: Row(children: [
+                Expanded(child: Text(
+                  tr('downloads'),
+                  style: AppType.scaled(context, AppType.pageTitle)
+                      .copyWith(color: palette.foreground),
+                )),
+                _DownloadSettingsButton(),
+              ]),
             ),
             if (provider.error != null) _ErrorBanner(message: provider.error!),
-            RemoteHostedAdsBanner(
-              placement: 'downloads',
-            ),
             Expanded(child: content),
           ],
         ),
@@ -81,18 +81,31 @@ class DownloadsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: palette.page,
-      appBar: PageAppBar(title: tr('downloads'), contentWidth: 760),
+      appBar: PageAppBar(title: tr('downloads'), contentWidth: 760,
+          actions: const [_DownloadSettingsButton()]),
       body: Column(
         children: [
           if (provider.error != null) _ErrorBanner(message: provider.error!),
-          RemoteHostedAdsBanner(
-            placement: 'downloads',
-          ),
           Expanded(child: content),
         ],
       ),
     );
   }
+}
+
+class _DownloadSettingsButton extends StatelessWidget {
+  const _DownloadSettingsButton();
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        key: const Key('open_download_settings'),
+        tooltip: tr('download_settings'),
+        icon: Icon(PhosphorIcons.slidersHorizontal()),
+        onPressed: () => showAppSheet<bool>(
+          context,
+          builder: (_) => const DownloadSettingsSheet(),
+        ),
+      );
 }
 
 class _EmptyDownloads extends StatelessWidget {
@@ -284,6 +297,16 @@ class _DownloadCard extends StatelessWidget {
                         ],
                       ],
                     ),
+                    if (download.estimatedTimeRemaining case final remaining?) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        _formatEta(remaining),
+                        key: const Key('download_eta'),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -319,6 +342,15 @@ class _DownloadCard extends StatelessWidget {
           ),
         );
       });
+}
+
+String _formatEta(Duration remaining) {
+  final minutes = (remaining.inSeconds / 60).ceil();
+  if (minutes < 60) {
+    return tr('download_eta_minutes', namedArgs: {'minutes': '$minutes'});
+  }
+  final hours = (minutes / 60).ceil();
+  return tr('download_eta_hours', namedArgs: {'hours': '$hours'});
 }
 
 class _DownloadMetadata extends StatelessWidget {

@@ -10,12 +10,11 @@ import '../../design/app_tokens.dart';
 import '../../presentation/billing/plus_controller.dart';
 import '../../services/plus_navigation.dart';
 import '../../widgets/plus/plus_format.dart';
-import '../../widgets/plus/plus_reminder.dart';
 import '../../widgets/plus/plus_visuals.dart';
 
 /// My FlixQuest's Plus card. Members get a living card (the aurora drifting
-/// behind their days left); everyone else, while Plus is on sale, a quiet
-/// invitation. It hides when there is nothing true to say.
+/// behind their days left); viewers with a balance or renewal can still
+/// reach their account. It hides when there is nothing to manage.
 class PlusCard extends StatefulWidget {
   const PlusCard({super.key});
 
@@ -42,8 +41,7 @@ class _PlusCardState extends State<PlusCard> {
     final Widget card;
     if (plus.adFree) {
       card = _MemberCard(key: const ValueKey('member'), plus: plus);
-    } else if (plus.shouldSuggest ||
-        (plus.wallet?.spendableCents ?? 0) > 0 ||
+    } else if ((plus.wallet?.spendableCents ?? 0) > 0 ||
         plus.renewal?.mode != null) {
       card = _InviteCard(key: const ValueKey('invite'), plus: plus);
     } else {
@@ -131,7 +129,7 @@ class _MemberCard extends StatelessWidget {
                     const PlusWordmark(size: 22),
                     const SizedBox(height: 12),
                     Text(
-                      tr('plus_youre_ad_free'),
+                      tr('plus_membership_active'),
                       style: const TextStyle(
                         fontFamily: 'FigtreeBold',
                         fontSize: 18,
@@ -146,7 +144,7 @@ class _MemberCard extends StatelessWidget {
                           : renewing
                               ? tr('plus_renews_on',
                                   args: [formatDay(context, until)])
-                              : tr('plus_ad_free_until',
+                              : tr('plus_membership_until',
                                   args: [formatDay(context, until)]),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -304,97 +302,6 @@ class _InviteCard extends StatelessWidget {
               ],
             );
           }),
-        ),
-      ),
-    );
-  }
-}
-
-/// An occasional Plus reminder between Home's rows, on the schedule
-/// [PlusReminderSchedule] keeps. Never for members, or while Plus is not on
-/// sale.
-class PlusSpotlight extends StatefulWidget {
-  const PlusSpotlight({super.key});
-
-  @override
-  State<PlusSpotlight> createState() => _PlusSpotlightState();
-}
-
-class _PlusSpotlightState extends State<PlusSpotlight> {
-  final _schedule = PlusReminderSchedule.instance;
-
-  @override
-  void initState() {
-    super.initState();
-    if (_schedule.due == null) {
-      _schedule.decide().then((_) {
-        if (mounted) setState(() {});
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final plus = context.watch<PlusController?>();
-    final show = _schedule.due == true && plus != null && plus.shouldSuggest;
-    if (show) _schedule.shown();
-    if (!show) return const SizedBox.shrink();
-    final price = plus.plan?.amountCents ?? 200;
-    final interval = plus.plan?.intervalDays ?? 31;
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpace.gutter(context)),
-      child: _Pressable(
-        label: plus.signedIn ? tr('plus_cta_member') : tr('plus_cta_guest'),
-        onTap: () {
-          _schedule.opened();
-          unawaited(openPlus(context));
-        },
-        child: PlusAurora(
-          borderRadius: BorderRadius.circular(AppRadii.hero),
-          energy: .8,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 4, 14),
-            child: Row(
-              children: <Widget>[
-                const PlusEmblem(size: 40),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        plus.signedIn
-                            ? tr('plus_cta_member')
-                            : tr('plus_cta_guest'),
-                        style: const TextStyle(
-                          fontFamily: 'FigtreeBold',
-                          fontSize: 15,
-                          color: PlusColors.ink,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        tr('plus_spotlight_body',
-                            args: [formatPrice(price), '$interval']),
-                        style: const TextStyle(
-                          fontFamily: 'Figtree',
-                          fontSize: 12.5,
-                          height: 1.35,
-                          color: PlusColors.mutedInk,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: tr('plus_not_now'),
-                  onPressed: () => setState(_schedule.dismissed),
-                  icon: Icon(PhosphorIcons.x(),
-                      size: 18, color: PlusColors.mutedInk),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

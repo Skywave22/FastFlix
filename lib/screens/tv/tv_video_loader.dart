@@ -1,7 +1,3 @@
-import 'package:flixquest/models/adsterra_playback_ads_config.dart';
-import 'package:flixquest/data/ads/content_ads.dart';
-import 'package:flixquest/services/adsterra_playback_ads_service.dart';
-import 'package:flixquest/widgets/ad_block_gate.dart';
 // ignore_for_file: use_build_context_synchronously
 import 'dart:async';
 import 'package:flixquest/functions/function.dart';
@@ -40,37 +36,27 @@ import '../../screens/common/download_selection_sheets.dart';
 import '../../screens/common/manual_source_picker.dart';
 import '../../tv/player/tv_player_screen.dart';
 
-/// Finds a stream for a series' episode. A Kids or Family series' loader,
-/// and the player it opens, are in its [ContentAdScope]: no ad is asked for.
+/// Finds a stream for a series' episode.
 class TVVideoLoader extends StatelessWidget {
   const TVVideoLoader(
       {required this.metadata,
       required this.download,
       this.useTvPlayer = false,
       this.onTvPlayerExit,
-      this.adStage = PlaybackAdStage.streamFound,
       super.key});
 
   final TVStreamMetadata metadata;
   final bool download;
   final bool useTvPlayer;
   final VoidCallback? onTvPlayerExit;
-  final PlaybackAdStage adStage;
 
   @override
   Widget build(BuildContext context) {
-    final loader = _TVVideoLoader(
-        metadata: metadata,
-        download: download,
-        useTvPlayer: useTvPlayer,
-        onTvPlayerExit: onTvPlayerExit,
-        adStage: adStage);
-    final id = metadata.tvId;
-    if (id == null) return loader;
-    return ContentAdGate(
-      content: AdContent(series: true, id: id, genreIds: metadata.genreIds),
-      holdChild: true,
-      child: loader,
+    return _TVVideoLoader(
+      metadata: metadata,
+      download: download,
+      useTvPlayer: useTvPlayer,
+      onTvPlayerExit: onTvPlayerExit,
     );
   }
 }
@@ -80,17 +66,13 @@ class _TVVideoLoader extends StatefulWidget {
       {required this.metadata,
       required this.download,
       this.useTvPlayer = false,
-      this.onTvPlayerExit,
-      this.adStage = PlaybackAdStage.streamFound});
+      this.onTvPlayerExit});
 
   final TVStreamMetadata metadata;
   final bool download;
   final bool useTvPlayer;
   final VoidCallback? onTvPlayerExit;
 
-  /// The popup once a source is found: [PlaybackAdStage.episodeSwitch] or
-  /// [PlaybackAdStage.movieSwitch] when the player itself started this load.
-  final PlaybackAdStage adStage;
 
   @override
   State<_TVVideoLoader> createState() => _TVVideoLoaderState();
@@ -111,7 +93,6 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
   int currentProviderIndex = 0;
   String _scraperApiUrl = '';
   final Map<String, int?> _streamSizeCacheByToken = {};
-  PlaybackAdPreload? _adPreload;
 
   Map<String, String> videos = {};
   List<BetterPlayerSubtitlesSource> subs = [];
@@ -128,28 +109,7 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
   }
 
   Future<void> _startPlayback() async {
-    if (!mounted) return;
-    if (!await AdBlockGate.instance.allowPlayback(context,
-        download: widget.download, television: widget.useTvPlayer)) {
-      if (mounted) Navigator.pop(context, false);
-      return;
-    }
-    if (!mounted) return;
-    _adPreload = AdsterraPlaybackAdsService.instance.preloadStreamFound(context,
-        download: widget.download,
-        television: widget.useTvPlayer,
-        stage: widget.adStage);
-    try {
-      await loadVideo();
-    } finally {
-      _adPreload?.dispose();
-    }
-  }
-
-  @override
-  void dispose() {
-    _adPreload?.dispose();
-    super.dispose();
+    if (mounted) await loadVideo();
   }
 
   Future<void> _loadProviders() async {
@@ -276,16 +236,7 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
         );
       }
 
-      if (selection != null) {
-        if (!await AdsterraPlaybackAdsService.instance.streamFound(context,
-                download: widget.download,
-                television: widget.useTvPlayer,
-                preload: _adPreload,
-                stage: widget.adStage) ||
-            !mounted) {
-          return;
-        }
-      }
+      if (!mounted) return;
       final firstWorkingProviderCode = selection?.provider.codeName;
       if (selection != null) {
         _showSelectedProvider(selection.provider);
@@ -495,7 +446,6 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
     final download = widget.download;
     final useTvPlayer = widget.useTvPlayer;
     final onTvPlayerExit = widget.onTvPlayerExit;
-    final adStage = widget.adStage;
     navigator.pop();
     ReportErrorWidget.show(
       navigator.context,
@@ -507,7 +457,6 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
             download: download,
             useTvPlayer: useTvPlayer,
             onTvPlayerExit: onTvPlayerExit,
-            adStage: adStage,
           ),
         ),
       ),
@@ -632,7 +581,6 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
         quality: quality,
       );
       if (mounted) {
-        AdsterraPlaybackAdsService.instance.afterDownloadQueued(context);
         Navigator.pop(context, true);
       }
     } catch (error) {

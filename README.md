@@ -25,7 +25,7 @@
 
 - **Discovery Feeds**: Categorized home feeds with shimmer loading effects — Trending, Top 10 This Week, New Releases, Upcoming, and Popular.
 - **Detailed Media Pages**: Media details featuring trailers, cast & crew filmographies, user reviews, and intelligent "More Like This" recommendations powered by TMDB.
-- **Explore & Filter**: Filter content by genre, release year, streaming provider, country, or sort order, alongside a random discovery tool.
+- **Explore & Filter**: Filter content by genre (including Anime), release year, streaming provider, country, or sort order, alongside a random discovery tool.
 - **TV Seasons & Episodes**: Interactive episode browser with episode thumbnails, descriptions, air dates, and quick episode switcher sheets.
 
 ### 📺 Android TV (10-Foot UI Experience)
@@ -53,13 +53,15 @@
 ### 💬 Comprehensive Subtitle Management
 
 - **Automatic External Subtitles**: Multi-language subtitle search and retrieval powered by Wyzie Subtitles API.
+- **Audio tracks**: Choose available HLS/DASH manifest audio tracks in the player. Availability and exact matching depend on the stream and player; ambiguous same-language DASH tracks may still use the player's native order.
 - **Local Subtitle Upload**: Pick and load local `.srt` or `.vtt` subtitle files directly from your device storage.
 - **Subtitle Customization**: Adjust font size, text color, background color, and visual styling presets.
 - **Encoding & HI Support**: Smart character encoding handling (UTF-8, Latin1, ASCII) and Hearing-Impaired (HI) tags.
 
 ### 📥 Offline Downloads
 
-- **Background Downloads**: Download movies and TV episodes with background download management and progress notifications.
+- **Background Downloads**: Download movies and TV episodes from HLS/DASH sources with background management, progress notifications and estimated time remaining. New direct-file downloads are not currently supported.
+- **Advanced download settings**: Choose adaptive-stream segment workers, simultaneous downloads, retries and an unmetered-network requirement. HLS/DASH segments can download in parallel; actual speed depends on the source and connection.
 - **Aspect Ratio Normalization**: Built-in video exporter with square-pixel aspect ratio normalization.
 - **Subtitle Bundling**: Automatically export and bundle subtitles with downloaded videos for offline viewing.
 - **Offline Player**: Dedicated offline library and media player for downloaded files.
@@ -70,13 +72,6 @@
 - **Ambient Mode**: Dynamic color palette extraction from movie/show posters and backdrops for an immersive ambient background glow.
 - **Occasional & Seasonal Themes**: Dynamic holiday themes (Christmas, New Year, Halloween, Valentine's Day, Easter, Eid, Diwali, Ethiopian New Year, etc.) with animated vector particle overlays (snow, fireworks, bats, hearts, adey flowers, confetti, stars, sparkles). Configurable via Firebase Remote Config.
 - **Themes**: Light, Dark, AMOLED Pure Black, and Material 3 Dynamic Color palettes.
-
-### Advertising
-
-- Centrally configured Adsterra WebView banners replace Start.io across existing phone, tablet, and Android TV slots.
-- Firebase Remote Config controls network/TV switches, banner codes, six supported sizes, and per-placement overrides with width fallbacks.
-- Hosted `/ads` announcements can stack above network banners or take priority. TV ads remain display-only.
-- Setup: [Remote Config advertising guide](docs/firebase_remote_config.md#activate-adsterra-banners) and [configured banner catalog](docs/adsterra_banners.json), with a [blank template](docs/adsterra_banners.example.json) for other accounts.
 
 ### 🔐 User Profiles & Cloud Synchronization
 
@@ -123,8 +118,11 @@ TMDB_API_KEY="your_tmdb_api_key"
 # Required: FlixQuest Scraper API v2 instance URL
 FLIXQUEST_API_URL="https://your-flixquest-api-instance.com"
 
-# Optional: Mixpanel project token for general analytics
-MIXPANEL_API_KEY="your_mixpanel_api_key"
+# Required: Laravel backend base URL (use a device-reachable URL in releases)
+LARAVEL_API_URL="https://your-laravel-api-instance.com"
+
+# Include this entry; the Mixpanel project token itself may be empty
+MIXPANEL_API_KEY=
 ```
 
 ### Obtaining API Keys
@@ -196,9 +194,8 @@ better_player_plus:
 
 ### Prerequisites
 
-- **Flutter SDK**: `>=3.0.0 <4.0.0`
-- **Dart SDK**: `^3.0.0`
-- **Android SDK / NDK**: Android SDK 34+, Java 17
+- **Flutter / Dart**: Flutter 3.35.7 (`.fvmrc`), Dart 3.9+
+- **Android SDK / NDK**: SDK platform 36, build tools 36.0.0, NDK 28.2.13676358, Java 17
 
 ### Installation Steps
 
@@ -214,6 +211,7 @@ better_player_plus:
    ```bash
    cd ..
    git clone https://github.com/BeamlakAschalew/flixquest-betterplayer.git
+   git -C flixquest-betterplayer checkout --detach 06f36400831b7b9119bd0c043034e1cf39de2d5a
    cd flixquest
    ```
 
@@ -248,18 +246,9 @@ better_player_plus:
    TV** or **Mobile**. The interface switches immediately and the choice is saved
    across launches. Choose **Automatic** to return to device detection.
 
-   Android has two flavors: `prod` (the default) and `dev`. To test real banner
-   ads using Firebase's `banner_ad_network_test` selector, run the dev flavor:
-
-   ```bash
-   flutter run --flavor dev
-   flutter run --flavor dev --release
-   ```
-
-   The test selector works in dev debug/profile/release builds. Prod ignores it
-   in every build mode. See [banner testing setup](docs/firebase_remote_config.md#test-real-banners-in-development).
-   Both flavors reuse the existing Android package and Firebase registration;
-   they share an install slot. The dev launcher label is **FlixQuest Dev**.
+   Android has `prod` (the default) and `dev` flavors. Run `flutter run --flavor dev`
+   for the dev launcher label. Both flavors share the package and Firebase
+   registration, so they use the same install slot.
 
 6. **Build Release APK**:
 
@@ -283,6 +272,54 @@ better_player_plus:
    `app_download_url_armeabi_v7a` and `app_download_url_x86_64`, and keep the
    universal APK in `app_download_url`. A device whose ABI can't be read, or
    whose key is empty, downloads the universal APK.
+
+### Build and publish APKs with GitHub Actions
+
+The **Android APK** workflow builds the signed `prod` release with the Flutter
+version in `.fvmrc`, Java 17, and a pinned checkout of the sibling Better Player
+project. It runs the focused Flutter and Android download-settings tests, then
+uploads the universal APK, the three ABI-specific APKs, and `SHA256SUMS.txt` as
+a workflow artifact. Pushes to `arena/f6eedbd9-fastflix` run an artifact-only
+build; they do not publish a release.
+
+Before running it, configure these repository secrets under **Settings → Secrets
+and variables → Actions**:
+
+| Secret | Value |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded release keystore file. For example, run `base64 < path/to/release.jks \| tr -d '\n'` locally and copy the output into the secret. |
+| `ANDROID_STORE_PASSWORD` | The keystore password. |
+| `ANDROID_KEY_ALIAS` | The signing key's alias. |
+| `ANDROID_KEY_PASSWORD` | The signing key's password. |
+| `FLIXQUEST_ENV` | Complete multi-line release `.env` contents, based on `.env.example`. |
+
+`FLIXQUEST_ENV` must contain non-empty `TMDB_API_KEY`, `FLIXQUEST_API_URL`, and
+`LARAVEL_API_URL` values, plus a `MIXPANEL_API_KEY` entry (which may be empty).
+Use literal values instead of `.env` variable interpolation for the required
+entries. Use real, device-reachable HTTP(S) base URLs: the emulator-only `10.0.2.2`
+example is rejected. Add the other public client settings from `.env.example` as
+needed. **Everything in `.env` is bundled into the APK and can be extracted**;
+never put server-side credentials or other private secrets there. The workflow
+uses the tracked `android/app/google-services.json` for Firebase. The release
+keystore and its passwords remain private; use the same signing key as existing
+installations if the APK should update them.
+
+To publish, push a tag beginning with `v` that points to the commit to release.
+The workflow creates a published GitHub release with generated notes if one
+for the tag doesn't exist, or replaces matching APK assets on the existing
+release while preserving its notes and draft/prerelease status. New semantic
+prerelease tags such as `v1.2.3-rc.1` are marked as prereleases. Set the app
+version in `pubspec.yaml` before tagging. The repository's Actions token must
+have permission to write contents/releases.
+
+You can also run **Android APK** manually: leave `release_tag` blank for a
+signed artifact-only build of the selected ref, or supply an existing tag to
+build that tag and attach the APKs to its release. The tag must include the
+workflow's preparation scripts and feature tests. GitHub only exposes manual
+workflow dispatch after the workflow file exists on the repository's default
+branch; a tag push can run the workflow from the tagged commit without merging
+this work. Artifacts are retained for 30 days. No release is published merely
+by adding this workflow.
 
 ---
 

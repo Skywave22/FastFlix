@@ -155,7 +155,6 @@ Widget _season() => SeasonScreen(
       seasonNumber: 1,
       source: _Source(),
       history: const WatchHistory(),
-      adBuilder: (_) => const SizedBox(height: 60, child: Text('AD_SLOT')),
       now: () => DateTime(2026, 9, 27),
     );
 
@@ -166,7 +165,6 @@ Widget _episode() => EpisodeScreen(
       seasons: _seasons,
       source: _Source(),
       history: const WatchHistory(),
-      adBuilder: (_) => const SizedBox(height: 60, child: Text('AD_SLOT')),
       now: () => DateTime(2026, 9, 27),
     );
 

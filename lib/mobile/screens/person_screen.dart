@@ -17,7 +17,6 @@ import '../../models/tv.dart';
 import '../../provider/app_dependency_provider.dart';
 import '../../provider/settings_provider.dart';
 import '../../screens/common/hero_photoview.dart';
-import '../../widgets/hosted_ads_banner.dart';
 import '../widgets/details_parts.dart';
 import '../widgets/media_art.dart';
 import '../widgets/page_kit.dart';
@@ -153,12 +152,6 @@ class _PersonScreenState extends State<PersonScreen> {
           SliverToBoxAdapter(child: _header(context)),
           SliverToBoxAdapter(child: _biography(context)),
           SliverToBoxAdapter(child: _socialLinks(context)),
-          SliverToBoxAdapter(
-            child: RemoteHostedAdsBanner(
-              placement: 'person_detail',
-              variant: HostedBannerVariant.tall,
-            ),
-          ),
           ..._filmography(context),
           SliverToBoxAdapter(child: _photos(context)),
           SliverToBoxAdapter(

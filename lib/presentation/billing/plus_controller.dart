@@ -5,13 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flixquest/core/error/failure.dart';
 import 'package:flixquest/core/storage/kv_store.dart';
 
-import '../../data/ads/ads_policy.dart';
 import '../../data/models/billing.dart';
 import '../../data/repositories/billing_repository.dart';
 
 /// FlixQuest Plus for the signed-in account: access, renewal, balance and the
 /// top-up being paid for. Laravel decides everything; this keeps the last
-/// verified answer, follows the account and drives [AdsPolicy].
+/// verified answer and follows the account.
 ///
 /// Every response is tagged with the revision it was requested under, so an
 /// answer for an account that has since signed out never reaches the next
@@ -152,9 +151,6 @@ class PlusController extends ChangeNotifier {
     return cheap + (cents - cheap * charge) ~/ priceCents;
   }
 
-  /// Purchases are open and this viewer could benefit from Plus.
-  bool get shouldSuggest => !adFree && (_catalog?.purchasesEnabled ?? false);
-
   bool _celebrate = false;
 
   /// Plus just started in this session; the celebration shows once.
@@ -185,8 +181,8 @@ class PlusController extends ChangeNotifier {
 
   // ---- lifecycle ---------------------------------------------------------
 
-  /// Restores the cached answer for the current account (so a paying viewer
-  /// never sees a first-frame ad) and checks again in the background.
+  /// Restores the cached answer for the current account and checks again in
+  /// the background.
   Future<void> start() async {
     if (_started) return;
     _started = true;
@@ -345,7 +341,6 @@ class PlusController extends ChangeNotifier {
   /// Pushes the access decision out and arms a timer for when it changes.
   void _publish() {
     if (_disposed) return;
-    AdsPolicy.update(adFree: adFree);
     _expiryTimer?.cancel();
     if (adFree) {
       final limits = <DateTime>[

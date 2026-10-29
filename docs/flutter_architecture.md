@@ -56,7 +56,7 @@ Title logos use the same TMDB cache, and remote SVG logos use a long-lived bytes
 policy with XML validation retained. Raster image caching stays with
 `cached_network_image`. `ScraperApi(baseUrl, {Dio? dio})` uses this shared client:
 providers/health/subtitle searches cache; streams/size requests never do, with
-60-second streams and 45-second subtitle timeouts. Scraper ads stay until F4.
+60-second streams and 45-second subtitle timeouts.
 
 ## Deployment configuration
 
@@ -69,7 +69,7 @@ the normalized base URL ends with `/api/v1/`. Endpoints use relative paths such 
 `.env.example` lists existing environment keys with empty/public sample values.
 The bundled `.env` retains its existing values and adds the development Laravel URL.
 Use public configuration only; Sanctum tokens are never bundled into assets.
-`--dart-define=FLIXQUEST_MIGRATION=auth,config,ads,sync,notifications,telemetry` selects
+`--dart-define=FLIXQUEST_MIGRATION=auth,config,sync,notifications,telemetry` selects
 future feature cutovers. All flags default off and F0 does not consume them in UI.
 
 Tokens use `flutter_secure_storage` under `flixquest.laravel.v1.sanctum_token`.
@@ -113,22 +113,16 @@ fields and stay separate in `lib/data/models/billing.dart`. The contract is
   accounts that use Plus or on the Plus screens. A verified entitlement is
   cached per owner and trusted offline until the earlier of its expiry and 24
   hours after the check, using the server's clock offset.
-- `AdsPolicy` (`lib/data/ads/`) is the single ad-free switch. Only the
-  controller writes it. Banners, the hosted `/ads` catalog and its events,
-  playback popups (including the owed player-exit popup), VAST pre-rolls and
-  the ad-blocker gate check it before any request and again after awaits, and
-  listen to it so Plus that starts mid-ad ends that ad while content plays on.
-  Remote ad switches in `AppDependencyProvider` are untouched.
+- Advertising is removed from the client. Existing Plus account and wallet
+  management remains available; old ad-related bootstrap fields are ignored.
 - Top-ups use an idempotency key that is reused only when the previous
   answer may have been lost. Checkout opens NOWPayments' own HTTPS page in the
   browser (TV shows its QR code); the app then polls Laravel for a bounded
   window. Returning from the browser proves nothing.
 - Surfaces: the Plus card on My FlixQuest, `PlusScreen`, `WalletScreen` and
   `PlusPaymentScreen` on phones; `TvPlusScreen` from the TV profile. Plus is
-  suggested only while it is on sale and not owned: "Remove ads" beside network
-  banners, an option in the ad-blocker prompt, and a Home card at most every
-  five days (three weeks after a dismissal). `PlusCelebration` marks Plus that
-  starts in the session, never a member opening the app.
+  available for existing accounts. `PlusCelebration` marks Plus that starts in
+  the session, never a member opening the app.
 
 ## Verification
 
@@ -144,7 +138,7 @@ Sanitized JSON fixtures and their backend origins are documented in
 ```
 
 An explicit read-only smoke test verifies the Herd server's bootstrap/ETag,
-ads/messages contracts, and unauthenticated profile rejection:
+messages contract, and unauthenticated profile rejection:
 
 ```sh
 .fvm/flutter_sdk/bin/flutter test integration/laravel_foundation_smoke_test.dart \

@@ -1,5 +1,8 @@
 # FlixQuest Flutter — Laravel Migration Implementation Plan
 
+> Historical planning document: the app's advertising system has since been removed.
+> Advertising instructions below no longer describe the current client.
+
 **Document Version:** 1.1
 **Branch:** `feat/laravel`
 **Status:** F0 implemented and verified against the measured baseline (2026-10-03); F1 implemented and automatically verified (2026-10-03), device smoke pending; F2 implemented and automatically verified (2026-10-03), staging/device smoke pending; original F3 implemented and automatically verified (2026-10-03), device/Filament smoke pending, F3.5 server-controlled source selection implemented (2026-10-04), automated verification recorded below and device smoke pending; F4 implemented and automatically verified (2026-10-04), device/Filament smoke pending; F5 implemented (2026-10-04), automated verification recorded below and two-device/staging smoke pending; F6 implemented (2026-10-04), automated verification recorded below and phone/TV Google reporting + push smoke pending; F7 implementation/build verification completed (2026-10-18), remote Google/device exit checks pending; OneSignal individual/bulk delivery implemented and locally verified; F8 local integration/preflight/playbook implemented (2026-10-18), MySQL staging and production gates pending

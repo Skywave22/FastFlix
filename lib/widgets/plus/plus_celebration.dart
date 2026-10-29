@@ -11,8 +11,8 @@ import 'plus_format.dart';
 import 'plus_visuals.dart';
 
 /// The moment Plus starts in this session (a payment confirms, a code is
-/// redeemed): an aurora bloom, a burst of foil confetti and the date ads
-/// stay away until. It sits above the navigator, closes itself after a few
+/// redeemed): an aurora bloom, foil confetti and the membership expiry date.
+/// It sits above the navigator, closes itself after a few
 /// seconds and on any tap or key, and never shows to a member who simply
 /// opens the app.
 class PlusCelebration extends StatefulWidget {

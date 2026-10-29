@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 import '../models/offline_download.dart';
+import '../models/download_settings.dart';
 
 abstract interface class OfflineDownloadGateway {
   Stream<List<OfflineDownload>> get downloadEvents;
@@ -89,6 +90,20 @@ class OfflineDownloadService implements OfflineDownloadGateway {
   @override
   Future<void> enqueue(OfflineDownloadRequest request) {
     return _methods.invokeMethod<void>('enqueue', request.toMap());
+  }
+
+  /// These settings are stored and applied by the Android download service,
+  /// including while the app is in the background.
+  Future<DownloadSettings> getDownloadSettings() async {
+    final raw = await _methods.invokeMapMethod<Object?, Object?>('getDownloadSettings');
+    return DownloadSettings.fromMap(raw ?? const {});
+  }
+
+  Future<DownloadSettings> setDownloadSettings(DownloadSettings settings) async {
+    final raw = await _methods.invokeMapMethod<Object?, Object?>(
+      'setDownloadSettings', settings.toMap(),
+    );
+    return DownloadSettings.fromMap(raw ?? settings.toMap());
   }
 
   Future<List<OfflineAudioTrack>> getAudioTracks({

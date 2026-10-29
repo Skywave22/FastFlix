@@ -3,7 +3,6 @@ import 'package:flixquest/constants/api_constants.dart';
 import 'package:flixquest/constants/app_constants.dart';
 import 'package:flixquest/core/storage/kv_store.dart';
 import 'package:flixquest/data/repositories/config_repository.dart';
-import 'package:flixquest/models/banner_ad.dart';
 import 'package:flixquest/presentation/config/bootstrap_view_model.dart';
 import 'package:flixquest/provider/app_dependency_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -91,9 +90,6 @@ void main() {
     expect(TMDB_API_KEY, 'override');
     expect(provider.isForcedUpdate, isTrue);
     expect(provider.minimumBuildNumber, 40);
-    expect(provider.hostedBannerMode, HostedBannerMode.priority);
-    expect(provider.bannerAdNetwork, 'clickadu');
-    expect(provider.bannerConfigFor('promo').enabled, isFalse);
     expect(provider.activeOccasionalTheme?.id, 'enkutatash');
     expect(provider.shouldShowOccasionalEffects, isTrue);
     vm.dispose();

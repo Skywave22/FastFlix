@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:flixquest/widgets/adsterra_playback_gate.dart';
-import 'package:flixquest/data/ads/content_ads.dart';
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -9,7 +7,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../constants/app_constants.dart';
-import '../../../models/adsterra_playback_ads_config.dart';
 import '../../../models/recently_watched.dart';
 import '../../../models/tv_stream_metadata.dart';
 import '../../../provider/app_dependency_provider.dart';
@@ -145,17 +142,7 @@ class PlayerEpisodeSelection {
                               await Navigator.pushReplacement(
                                 playerContext,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      AdsterraPlaybackGate.buildLoader(context,
-                                          television: useTvPlayer,
-                                          content: tvMetadata.tvId == null
-                                              ? null
-                                              : AdContent(
-                                                  series: true,
-                                                  id: tvMetadata.tvId!,
-                                                  genreIds:
-                                                      tvMetadata.genreIds),
-                                          builder: (context) => TVVideoLoader(
+                                  builder: (context) => TVVideoLoader(
                                                 download: false,
                                                 useTvPlayer: useTvPlayer,
                                                 metadata: TVStreamMetadata(
@@ -181,9 +168,7 @@ class PlayerEpisodeSelection {
                                                   allSeasons:
                                                       tvMetadata.allSeasons,
                                                 ),
-                                                adStage: PlaybackAdStage
-                                                    .episodeSwitch,
-                                              )),
+                                              ),
                                 ),
                               );
                             },

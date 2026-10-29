@@ -6,7 +6,6 @@ void main() {
     final flags = MigrationFlags.parse(' auth,config, auth,typo ');
     expect(flags.auth, isTrue);
     expect(flags.config, isTrue);
-    expect(flags.ads, isFalse);
     expect(flags.sync, isFalse);
     expect(MigrationFlags.parse('').auth, isFalse);
   });
@@ -14,7 +13,6 @@ void main() {
     final flags = MigrationFlags.fromRuntime();
     expect(flags.auth, isTrue);
     expect(flags.config, isTrue);
-    expect(flags.ads, isTrue);
     expect(flags.sync, isTrue);
     expect(flags.notifications, isTrue);
     expect(flags.telemetry, isFalse);

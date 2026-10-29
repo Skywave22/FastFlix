@@ -115,7 +115,6 @@ Widget _app({
             source: source,
             now: () => DateTime(2026, 9, 27),
             showTitleLogos: false,
-            adBuilder: (_) => const Text('AD_SLOT'),
           ),
         ),
       ),
@@ -208,16 +207,15 @@ void main() {
     expect(source.movieCalls, 2);
   });
 
-  testWidgets('ad is after the third date group', (tester) async {
+  testWidgets('later date groups remain reachable', (tester) async {
     await tester.pumpWidget(_app(source: _Source()));
     await tester.pumpAndSettle();
     final scroll = find.byWidgetPredicate(
         (w) => w is Scrollable && w.axisDirection == AxisDirection.down);
     expect(find.text('Movie 1'), findsOneWidget);
-    expect(find.text('AD_SLOT'), findsNothing);
-    await tester.scrollUntilVisible(find.text('AD_SLOT'), 200,
+    await tester.scrollUntilVisible(find.text('Series 4'), 200,
         scrollable: scroll);
-    expect(find.text('AD_SLOT'), findsOneWidget);
+    expect(find.text('Series 4'), findsOneWidget);
   });
 
   for (final mode in <String>['dark', 'light']) {

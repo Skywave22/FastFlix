@@ -1,7 +1,3 @@
-import 'package:flixquest/widgets/adsterra_playback_gate.dart';
-import 'package:flixquest/data/ads/content_ads.dart';
-import 'package:flixquest/models/adsterra_playback_ads_config.dart';
-import 'package:flixquest/services/adsterra_playback_ads_service.dart';
 import 'package:flixquest/widgets/playback_action.dart';
 // ignore_for_file: deprecated_member_use
 
@@ -27,6 +23,8 @@ import '../../functions/language_names.dart';
 import '../../functions/subtitle_options.dart';
 import '/constants/app_constants.dart';
 import '/widgets/common_widgets.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -48,7 +46,6 @@ import '../movie/movie_video_loader.dart';
 import '../tv/tv_video_loader.dart';
 import 'player/player_data_management.dart';
 import 'player/player_background_save.dart';
-import 'player/player_preroll_ad.dart';
 import 'player/player_completion_detector.dart';
 import 'player/tv_subtitle_timing_panel.dart';
 import 'player/player_subtitle_timing_sheet.dart';
@@ -58,13 +55,13 @@ import 'player/player_episode_selection.dart';
 import 'player/player_movie_recommendations.dart';
 import 'player/player_next_episode_policy.dart';
 import 'player/player_sheet_ui.dart';
+import 'player/player_audio_choices.dart';
 import 'player/player_feedback_ui.dart';
 import 'player/stream_feedback_prompt.dart';
 import '../../services/stream_feedback_session.dart';
 import '../../services/stream_feedback_service.dart';
 import '../../services/automatic_stream_report.dart';
 import '../../services/streaming_dnd_service.dart';
-import '../../widgets/ad_block_playback_guard.dart';
 import '../../design/app_tokens.dart';
 import 'player/player_watch_page.dart';
 import 'player/player_strings.dart';
@@ -141,7 +138,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
   final _automaticStreamReport = AutomaticStreamReport();
   final _feedbackConnection = StreamFeedbackConnection();
   bool _exitingPlayer = false;
-  bool _adBlockStopped = false;
   String _automaticReportEndReason = 'route_disposed';
   int _feedbackSourceSwitches = 0;
 
@@ -160,13 +156,8 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
   bool _nextEpisodeButtonDismissed = false;
   bool _preRollActive = false;
 
-  /// The video ad playing as the pre-roll, if any. Its timeline is separate
-  /// from the content's: progress, subtitles and resume points ignore it.
-  late final PlayerPrerollAd _prerollAd =
-      PlayerPrerollAd(television: widget.useTvControls);
-
-  /// A recently-watched save requested during the pre-roll, when the player's
-  /// position belongs to the ad. It runs once the content starts.
+  /// A recently-watched save requested during the branded intro, when the player's
+  /// position belongs to the intro. It runs once the content starts.
   bool _recentInsertPending = false;
 
   /// Between the end of a pre-roll and the content's own initialized event.
@@ -366,7 +357,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         enableNextEpisodeButton: widget.mediaType == MediaType.tvShow &&
             widget.settings.enableNextEpisodeButton,
         introDbSkipButtonBuilder: _buildIntroDbSkipButton,
-        preRollOverlayBuilder: _buildPrerollOverlay,
         introDbSkipAvailable: _canSkipIntroDbSegment,
         onIntroDbSkip: _skipActiveIntroDbSegment,
         // The native MediaRouteButton currently crashes on some Android
@@ -585,31 +575,15 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
     final initialPosition =
         requestedPosition < Duration.zero ? Duration.zero : requestedPosition;
     try {
-      // The ad request runs alongside the intro lookup; neither waits on the
-      // other, and a missing ad never delays the content.
-      final adFuture = _prerollAd.load(_appDependencies.vastPreroll,
-          cancelled: () => !mounted || _adBlockStopped,
-          adFreeContent: ContentAdScope.adFreeAt(context));
       StreamIntroConfig intro = const StreamIntroConfig.disabled();
       try {
         intro = await _introService.fetch(_resolveScraperApiUrl());
       } catch (error) {
         debugPrint('[Player] Branded intro unavailable: $error');
       }
-      final prerollAd = await adFuture;
-      if (!mounted || _adBlockStopped) return;
+      if (!mounted) return;
 
-      if (prerollAd != null) {
-        // The ad replaces the branded intro for this session: one pre-roll
-        // keeps the wait before the content short.
-        _preRollActive = true;
-        _prerollAd.start(prerollAd, _betterPlayerController);
-        await _betterPlayerController.setupDataSourceWithPreRoll(
-          preRollDataSource: PlayerPrerollAd.dataSource(prerollAd.media),
-          betterPlayerDataSource: dataSource,
-          contentStartPosition: initialPosition,
-        );
-      } else if (intro.enabled && intro.url != null) {
+      if (intro.enabled && intro.url != null) {
         _preRollActive = true;
         await _betterPlayerController.setupDataSourceWithPreRoll(
           preRollDataSource: _buildIntroDataSource(intro.url!),
@@ -623,7 +597,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
           initialPosition: initialPosition,
         );
       }
-      if (!mounted || _adBlockStopped) return;
+      if (!mounted) return;
       _applyPreferredAdaptiveQuality();
       duration = _betterPlayerController
               .videoPlayerController?.value.duration?.inSeconds ??
@@ -634,19 +608,11 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
       );
       if (!_preRollActive) unawaited(_loadIntroDbTimings());
     } catch (error) {
-      if (_adBlockStopped) return;
       _preRollActive = false;
-      _prerollAd.finish('error');
       _feedbackSession.recordFailure();
       debugPrint('[Player] Initial stream setup failed: $error');
     }
   }
-
-  Widget? _buildPrerollOverlay(
-    BuildContext context,
-    BetterPlayerController controller,
-  ) =>
-      _prerollAd.overlay(context, onExit: _exitPlayer);
 
   BetterPlayerDataSource _buildIntroDataSource(Uri url) {
     return BetterPlayerDataSource(
@@ -683,7 +649,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
       DateTime.now().difference(_analyticsSessionStartedAt).inMilliseconds;
 
   void _onAnalyticsPlayerEvent(BetterPlayerEvent event) {
-    if (_adBlockStopped) return;
     final feedbackValue = _betterPlayerController.videoPlayerController?.value;
     _feedbackSession.onEvent(
       event,
@@ -723,11 +688,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         );
         break;
       case BetterPlayerEventType.preRollEnded:
-        _prerollAd.finish(
-          event.parameters?[BetterPlayerController.preRollEndReasonParameter]
-                  as String? ??
-              'completed',
-        );
         _preRollActive = false;
         _completionDetector.reset();
         _playbackCompletionHandled = false;
@@ -743,7 +703,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         }
         break;
       case BetterPlayerEventType.play:
-        if (_preRollActive) _prerollAd.onPlay();
         _analyticsPlayingStartedAt ??= DateTime.now();
         if (!_preRollActive) _wellnessTracker.play();
         _trackPlaybackEvent('play');
@@ -751,7 +710,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         _saveWellnessSession();
         break;
       case BetterPlayerEventType.pause:
-        if (_preRollActive) _prerollAd.onPause();
         _analyticsWasPlayingBeforeBuffering = false;
         _stopAnalyticsWatchClock();
         _wellnessTracker.pause();
@@ -799,10 +757,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         _handlePlaybackCompleted(source: 'native');
         break;
       case BetterPlayerEventType.setupDataSource:
-        // A provider switch replaces the sequence while the ad is showing.
-        if (!_betterPlayerController.isPreRollActive) {
-          _prerollAd.finish('closed');
-        }
         _completionDetector.reset();
         _playbackCompletionHandled = false;
         _introDbRequestId++;
@@ -899,10 +853,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
 
   void _startPlaybackMonitor() {
     _progressCheckTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!widget.useTvControls) {
-        AdsterraPlaybackAdsService.instance.notePlayerWatch(
-            context, Duration(milliseconds: _wellnessTracker.watchedMs()));
-      }
       bool initialized;
       try {
         initialized = _betterPlayerController.isVideoInitialized() == true;
@@ -1598,7 +1548,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
     });
   }
 
-  /// During the pre-roll the player's position and duration are the ad's, so
+  /// During the intro the player's position and duration are the intro's, so
   /// saving now would overwrite the resume point. Save once the content runs.
   bool _deferRecentInsertDuringPreRoll() {
     if (!_preRollActive && !_awaitingContentAfterPreRoll) return false;
@@ -1912,7 +1862,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
     _feedbackConnection.dispose();
     _hideContentSwitchLoading();
     _betterPlayerControllerInitialized = false;
-    _prerollAd.dispose();
     settings.removeListener(_syncAmbientGlowSetting);
     settings.removeListener(_syncAutoPipSetting);
     final suppressionId = _occasionalEffectsSuppressionId;
@@ -1973,22 +1922,6 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
     ]);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  void _stopForAdBlocker() {
-    if (_adBlockStopped) return;
-    if (_isVideoInitializedSafely()) _saveRecentProgress();
-    _adBlockStopped = true;
-    _exitingPlayer = true;
-    _automaticReportEndReason = 'ad_blocked';
-    _durationTimer?.cancel();
-    _progressCheckTimer?.cancel();
-    _phoneNextEpisodeTimer?.cancel();
-    _tvNextEpisodeTimer?.cancel();
-    _hideNextEpisodeOverlay();
-    _prerollAd.dispose();
-    // Force native teardown now, before any route transition or message.
-    _betterPlayerController.dispose(forceDispose: true);
   }
 
   void _handleVideoFinished() {
@@ -2441,7 +2374,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
   }
 
   Future<void> _startContent(Future<void> Function() action) async {
-    if (_startingContent || !mounted || _adBlockStopped) return;
+    if (_startingContent || !mounted) return;
     setState(() => _startingContent = true);
     _nextEpisodeOverlay?.markNeedsBuild();
     // Fullscreen controls live on a separate route. Show feedback above that
@@ -2497,16 +2430,12 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         });
         await Navigator.of(context).pushReplacement(
           MaterialPageRoute<void>(
-            builder: (context) => AdsterraPlaybackGate.buildLoader(context,
-                television: widget.useTvControls,
-                content: _seriesAdContent,
-                builder: (context) => TVVideoLoader(
-                      download: false,
-                      useTvPlayer: widget.useTvControls,
-                      onTvPlayerExit: widget.onTvPlayerExit,
-                      metadata: _metadataForTvEpisode(episode),
-                      adStage: PlaybackAdStage.episodeSwitch,
-                    )),
+            builder: (context) => TVVideoLoader(
+              download: false,
+              useTvPlayer: widget.useTvControls,
+              onTvPlayerExit: widget.onTvPlayerExit,
+              metadata: _metadataForTvEpisode(episode),
+            ),
           ),
         );
       });
@@ -2533,29 +2462,15 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         );
         await Navigator.of(context).pushReplacement(
           MaterialPageRoute<void>(
-            builder: (context) => AdsterraPlaybackGate.buildLoader(context,
-                television: widget.useTvControls,
-                content: AdContent(
-                    series: false, id: movie.movieId, genreIds: movie.genreIds),
-                builder: (context) => MovieVideoLoader(
-                      download: false,
-                      useTvPlayer: widget.useTvControls,
-                      onTvPlayerExit: widget.onTvPlayerExit,
-                      metadata: metadata,
-                      adStage: PlaybackAdStage.movieSwitch,
-                    )),
+            builder: (context) => MovieVideoLoader(
+              download: false,
+              useTvPlayer: widget.useTvControls,
+              onTvPlayerExit: widget.onTvPlayerExit,
+              metadata: metadata,
+            ),
           ),
         );
       });
-
-  /// The series this player is in, for the ad rules of its next episode.
-  AdContent? get _seriesAdContent {
-    final metadata = widget.tvMetadata;
-    final id = metadata?.tvId;
-    return id == null
-        ? null
-        : AdContent(series: true, id: id, genreIds: metadata?.genreIds);
-  }
 
   TVStreamMetadata _metadataForTvEpisode(EpisodeMetadata episode) {
     final current = widget.tvMetadata!;
@@ -2685,8 +2600,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
     bool reload = false,
     Duration? resumeAt,
   }) async {
-    if (_adBlockStopped ||
-        _isSwitchingProvider ||
+    if (_isSwitchingProvider ||
         (!reload && providerCode == _currentProviderCode)) {
       return false;
     }
@@ -2775,7 +2689,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         _rawVideoLinksByProvider[providerCode] = List.of(result.videoLinks!);
       }
 
-      if (!mounted || _adBlockStopped) return false;
+      if (!mounted) return false;
       final nextSource = source;
       replacementStarted = true;
       _preRollActive = false;
@@ -2788,7 +2702,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         ),
         initialPosition: position,
       );
-      if (!mounted || _adBlockStopped) return false;
+      if (!mounted) return false;
       _applyPreferredAdaptiveQuality();
       if (!wasPlaying) await _betterPlayerController.pause();
       unawaited(_loadIntroDbTimings());
@@ -2852,7 +2766,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         '[Player] Provider ${reload ? 'refresh' : 'switch'} failed for '
         '$providerCode: $error',
       );
-      if (!mounted || _adBlockStopped) return false;
+      if (!mounted) return false;
       // A refresh has nothing to restore: the previous source is the one
       // that failed.
       if (!reload && replacementStarted && previousDataSource != null) {
@@ -2902,13 +2816,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) => AdBlockPlaybackGuard(
-        stopPlayback: _stopForAdBlocker,
-        television: widget.useTvControls,
-        child: _buildPlayback(context),
-      );
-
-  Widget _buildPlayback(BuildContext context) {
+  Widget build(BuildContext context) {
     _handleScreenOrientation(context);
     if (_isPortraitInlineLayout(context)) {
       return PopScope(
@@ -3054,7 +2962,9 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
         ),
       WatchAction(
         icon: PhosphorIcons.closedCaptioning(),
-        label: tr('player_subtitles'),
+        label: tr((_betterPlayerController.betterPlayerAsmsAudioTracks?.length ?? 0) > 1
+            ? 'player_audio_subtitles'
+            : 'player_subtitles'),
         onTap: _showSubtitleSwitcher,
       ),
       WatchAction(
@@ -3442,14 +3352,10 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
       _closePlayer();
       await navigator.pushReplacement(
         MaterialPageRoute<void>(
-          builder: (context) => AdsterraPlaybackGate.buildLoader(context,
-              television: widget.useTvControls,
-              content: _seriesAdContent,
-              builder: (context) => TVVideoLoader(
-                    download: false,
-                    metadata: _metadataForTvEpisode(next),
-                    adStage: PlaybackAdStage.episodeSwitch,
-                  )),
+          builder: (context) => TVVideoLoader(
+            download: false,
+            metadata: _metadataForTvEpisode(next),
+          ),
         ),
       );
     });
@@ -3509,18 +3415,11 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
           ...metadata,
           ...measurement.parameters(totalBytes: bytes),
         });
-    final watched = Duration(milliseconds: _wellnessTracker.watchedMs());
-    // Leaving a Kids or Family title opens no popup, owed or not.
-    final adFree = ContentAdScope.adFreeAt(context);
     scheduleStreamFeedbackAfterExit(
       context,
       measurement: measurement,
       parameters: parameters,
       onReturned: widget.onTvPlayerExit,
-      beforePrompt: widget.useTvControls || adFree
-          ? null
-          : (context) => AdsterraPlaybackAdsService.instance
-              .playerExit(context, watched: watched),
     );
     Navigator.pop(context);
   }
@@ -4315,6 +4214,8 @@ class _SubtitleSwitcherSheetState extends State<_SubtitleSwitcherSheet> {
     final subtitles = [
       for (final option in widget.options) _subtitleRow(option)
     ];
+    final audioTracks = widget.controller.betterPlayerAsmsAudioTracks ??
+        const <BetterPlayerAsmsAudioTrack>[];
     return DraggableScrollableSheet(
       initialChildSize: .82,
       minChildSize: .5,
@@ -4322,8 +4223,10 @@ class _SubtitleSwitcherSheetState extends State<_SubtitleSwitcherSheet> {
       expand: false,
       snap: true,
       builder: (context, scrollController) => PlayerSheetScaffold(
-        title: tr('player_subtitles'),
-        subtitle: tr('choose_subtitle_language'),
+        title: tr(audioTracks.length > 1 ? 'player_audio_subtitles' : 'player_subtitles'),
+        subtitle: tr(audioTracks.length > 1
+            ? 'player_audio_subtitles_description'
+            : 'choose_subtitle_language'),
         actions: [
           PlayerSheetAction(
             icon: PhosphorIcons.x(),
@@ -4339,7 +4242,36 @@ class _SubtitleSwitcherSheetState extends State<_SubtitleSwitcherSheet> {
         child: ListView(
           controller: scrollController,
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-          children: subtitles,
+          children: [
+            PlayerAudioChoices(
+              tracks: audioTracks,
+              selected: widget.controller.betterPlayerAsmsAudioTrack,
+              onSelected: (track) {
+                widget.controller.setAudioTrack(track);
+                final source = widget.controller.betterPlayerDataSource;
+                final path =
+                    Uri.tryParse(source?.url ?? '')?.path.toLowerCase();
+                final isDash =
+                    source?.videoFormat == BetterPlayerVideoFormat.dash ||
+                        (source?.videoFormat == null &&
+                            path?.endsWith('.mpd') == true);
+                if (!kIsWeb &&
+                    defaultTargetPlatform == TargetPlatform.android &&
+                    isDash) {
+                  final language = uniqueDashAudioLanguage(audioTracks, track);
+                  if (language != null) {
+                    // A negative index makes Better Player's Android selector
+                    // use its label/language fallback. If it finds no match,
+                    // the normal index selection above remains in effect.
+                    widget.controller.videoPlayerController
+                        ?.setAudioTrack(language, -1);
+                  }
+                }
+                widget.onClose();
+              },
+            ),
+            ...subtitles,
+          ],
         ),
       ),
     );

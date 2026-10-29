@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:flixquest/widgets/adsterra_playback_gate.dart';
-import 'package:flixquest/data/ads/content_ads.dart';
 import 'package:flixquest/widgets/playback_action.dart';
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -9,7 +7,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import '../../../constants/app_constants.dart';
-import '../../../models/adsterra_playback_ads_config.dart';
 import '../../../models/movie_stream_metadata.dart';
 import '../../../ui_components/app_ui_components.dart';
 import '../../movie/movie_video_loader.dart';
@@ -60,18 +57,11 @@ class PlayerMovieRecommendations {
         await Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => AdsterraPlaybackGate.buildLoader(context,
-                television: useTvPlayer,
-                content: AdContent(
-                    series: false,
-                    id: recommendedMovie.movieId,
-                    genreIds: recommendedMovie.genreIds),
-                builder: (context) => MovieVideoLoader(
-                      download: false,
-                      useTvPlayer: useTvPlayer,
-                      metadata: newMetadata,
-                      adStage: PlaybackAdStage.movieSwitch,
-                    )),
+            builder: (context) => MovieVideoLoader(
+              download: false,
+              useTvPlayer: useTvPlayer,
+              metadata: newMetadata,
+            ),
           ),
         );
       }

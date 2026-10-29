@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 import '../../catalog/episode_choice.dart';
 import '../../constants/api_constants.dart';
 import '../../constants/app_constants.dart';
-import '../../data/ads/content_ads.dart';
 import '../../design/outline_mark.dart';
 import '../../functions/function.dart';
 import '../../widgets/playback_action.dart';
@@ -26,7 +25,6 @@ import '../../provider/settings_provider.dart';
 import '../../screens/movie/movie_video_loader.dart';
 import '../../screens/tv/tv_video_loader.dart';
 import '../../services/video_launcher.dart';
-import '../../widgets/hosted_ads_banner.dart';
 import '../app/tv_design.dart';
 import '../controllers/tv_media_details_controller.dart';
 import '../controllers/tv_title_logos.dart';
@@ -51,8 +49,6 @@ import '../widgets/tv_spotlight.dart';
 /// videos and the recommendations, each returning to where it was left.
 /// Back from below the actions returns to them; Back from the actions leaves
 /// the page.
-///
-/// A Kids or Family title's page, and everything it plays, shows no ads.
 class TvMediaDetailsScreen extends StatefulWidget {
   const TvMediaDetailsScreen({
     required this.item,
@@ -654,12 +650,7 @@ class _TvMediaDetailsScreenState extends State<TvMediaDetailsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => ContentAdGate(
-        content: AdContent.of(_item),
-        child: Builder(builder: _page),
-      );
-
-  Widget _page(BuildContext context) {
+  Widget build(BuildContext context) {
     Localizations.localeOf(context);
     final palette = TvPalette.of(context);
     final resume = _resume(listen: true);
@@ -753,24 +744,7 @@ class _TvMediaDetailsScreenState extends State<TvMediaDetailsScreen> {
                         ),
                       ),
                     ),
-                    // A thin banner along the backdrop's top edge, clear of
-                    // the artwork's subject and the bottom-left info, while
-                    // the viewer reads and picks. Remove the WebView while
-                    // the rows below are in view so hidden ads stop loading.
-                    Positioned(
-                      top: inset * 0.6,
-                      right: inset,
-                      width: (constraints.maxWidth - inset * 2)
-                          .clamp(0.0, 360.0)
-                          .toDouble(),
-                      child: Visibility(
-                        visible: !browsing,
-                        child: const BannerAdSlot(
-                          placement: 'title_detail',
-                          variant: HostedBannerVariant.standard,
-                        ),
-                      ),
-                    ),
+
                   ],
                 ),
               ),

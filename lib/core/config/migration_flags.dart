@@ -6,13 +6,12 @@ class MigrationFlags {
   // F7 retires the Firebase account/sync rollback paths. Old launch defines
   // remain harmless; runtime source selection still belongs to Laravel.
   factory MigrationFlags.fromRuntime() => MigrationFlags.parse(
-        'auth,config,ads,sync,notifications',
+        'auth,config,sync,notifications',
       );
 
   final Set<String> _features;
   bool get auth => _features.contains('auth');
   bool get config => _features.contains('config');
-  bool get ads => _features.contains('ads');
   bool get sync => _features.contains('sync');
   bool get notifications => _features.contains('notifications');
   bool get telemetry => _features.contains('telemetry');

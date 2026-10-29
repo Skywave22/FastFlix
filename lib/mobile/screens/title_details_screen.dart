@@ -1,4 +1,3 @@
-import 'package:flixquest/services/adsterra_playback_ads_service.dart';
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
@@ -9,7 +8,6 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../catalog/details_controller.dart';
-import '../../data/ads/content_ads.dart';
 import '../../catalog/details_play.dart';
 import '../../catalog/episode_choice.dart';
 import '../../catalog/media_item.dart';
@@ -53,8 +51,6 @@ import '../widgets/pill_button.dart';
 import '../widgets/poster_card.dart';
 import '../widgets/section_header.dart';
 import 'episode_screen.dart';
-import '../../widgets/hosted_ads_banner.dart' show HostedBannerVariant;
-import 'home_screen.dart' show HomeAdSlot;
 import 'season_screen.dart';
 
 enum DetailsTab { moreLikeThis, trailers, about }
@@ -68,7 +64,6 @@ class TitleDetailsScreen extends StatefulWidget {
     this.source,
     this.history,
     this.showTitleLogos = true,
-    this.adBuilder,
     this.now,
     super.key,
   });
@@ -81,7 +76,6 @@ class TitleDetailsScreen extends StatefulWidget {
   /// What the viewer has watched; the recently watched store by default.
   final WatchHistory? history;
   final bool showTitleLogos;
-  final WidgetBuilder? adBuilder;
   final DateTime Function()? now;
 
   @override
@@ -334,11 +328,6 @@ class _TitleDetailsScreenState extends State<TitleDetailsScreen> {
       languages: insights.languages,
       countries: insights.countries,
     );
-    if (!await AdsterraPlaybackAdsService.instance.beforeLoader(context,
-            download: download, content: AdContent.of(item)) ||
-        !mounted) {
-      return;
-    }
     final queued = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => MovieVideoLoader(
@@ -553,7 +542,6 @@ class _TitleDetailsScreenState extends State<TitleDetailsScreen> {
               slivers: <Widget>[
                 _header(context),
                 SliverToBoxAdapter(child: _summary(context, history)),
-                SliverToBoxAdapter(child: _adSlot()),
                 if (!_isMovie)
                   SliverToBoxAdapter(child: _episodes(context, history)),
                 _tabsHeader(palette),
@@ -562,21 +550,10 @@ class _TitleDetailsScreenState extends State<TitleDetailsScreen> {
               ],
             ),
     );
-    // A Kids or Family title's page, and the loader it opens, show no ads.
-    return ContentAdGate(
-      content: AdContent.of(_item),
-      child: widget.showTitleLogos
-          ? TitleLogoScope(logos: _logosFor(context), child: page)
-          : page,
-    );
+    return widget.showTitleLogos
+        ? TitleLogoScope(logos: _logosFor(context), child: page)
+        : page;
   }
-
-  Widget _adSlot() =>
-      widget.adBuilder?.call(context) ??
-      HomeAdSlot(
-        placement: _isMovie ? 'movie_detail' : 'tv_detail',
-        variant: HostedBannerVariant.tall,
-      );
 
   Widget _tabsHeader(AppPalette palette) => SliverPersistentHeader(
         pinned: true,
@@ -606,7 +583,7 @@ class _TitleDetailsScreenState extends State<TitleDetailsScreen> {
           size: ArtSize.backdrop,
           alignment: Alignment.topCenter,
         ),
-        start: <Widget>[_summary(context, history), _adSlot()],
+        start: <Widget>[_summary(context, history)],
         end: <Widget>[
           if (!_isMovie) SliverToBoxAdapter(child: _episodes(context, history)),
           _tabsHeader(AppPalette.of(context)),

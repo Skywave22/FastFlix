@@ -4,7 +4,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../../catalog/details_controller.dart';
-import '../../data/ads/content_ads.dart';
 import '../../catalog/details_play.dart';
 import '../../catalog/media_item.dart';
 import '../../catalog/season_source.dart';
@@ -30,8 +29,6 @@ import '../widgets/page_kit.dart' show ReadableWidth;
 import '../widgets/section_header.dart';
 import 'credits_screen.dart';
 import 'episode_screen.dart';
-import '../../widgets/hosted_ads_banner.dart' show HostedBannerVariant;
-import 'home_screen.dart' show HomeAdSlot;
 
 /// A season's page: the series' artwork, the season's name (tapped, the
 /// other seasons), what to play, its synopsis, then its episodes, cast,
@@ -44,7 +41,6 @@ class SeasonScreen extends StatefulWidget {
     required this.seasonNumber,
     this.source,
     this.history,
-    this.adBuilder,
     this.now,
     super.key,
   });
@@ -61,7 +57,6 @@ class SeasonScreen extends StatefulWidget {
 
   /// What the viewer has watched; the recently watched store by default.
   final WatchHistory? history;
-  final WidgetBuilder? adBuilder;
   final DateTime Function()? now;
 
   @override
@@ -218,22 +213,11 @@ class _SeasonScreenState extends State<SeasonScreen>
     );
   }
 
-  /// A Kids or Family series' pages show no ads.
   @override
-  Widget build(BuildContext context) => ContentAdGate(
-        content: AdContent.of(widget.series),
-        child: Builder(builder: _page),
-      );
-
-  Widget _page(BuildContext context) {
+  Widget build(BuildContext context) {
     final palette = AppPalette.of(context);
     final history = _history(context);
     final current = _current;
-    final ad = widget.adBuilder?.call(context) ??
-        HomeAdSlot(
-          placement: 'season_detail',
-          variant: HostedBannerVariant.tall,
-        );
     if (AppBreakpoints.isTablet(context) &&
         MediaQuery.sizeOf(context).width >= AppBreakpoints.wide) {
       // A wide tablet: the season beside its episodes, as a title's page.
@@ -248,7 +232,7 @@ class _SeasonScreenState extends State<SeasonScreen>
             size: ArtSize.backdrop,
             alignment: Alignment.topCenter,
           ),
-          start: <Widget>[_summary(context, current, history), ad],
+          start: <Widget>[_summary(context, current, history)],
           end: <Widget>[
             SliverToBoxAdapter(child: _episodeList(context, history)),
             SliverToBoxAdapter(child: _cast(context)),
@@ -281,7 +265,6 @@ class _SeasonScreenState extends State<SeasonScreen>
           ),
           SliverToBoxAdapter(
               child: ReadableWidth(child: _summary(context, current, history))),
-          SliverToBoxAdapter(child: ad),
           SliverToBoxAdapter(
               child: ReadableWidth(child: _episodeList(context, history))),
           SliverToBoxAdapter(child: ReadableWidth(child: _cast(context))),

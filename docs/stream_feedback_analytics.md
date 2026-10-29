@@ -14,8 +14,8 @@ Debug, profile and release builds now use the same normal frequencies:
 - Survey: a 10% sample of eligible exits with a three-day cooldown.
 - Automatic report: a 20% sample, sent only after at least five minutes of
   actual content playback and when the player exits or is replaced.
-- Ads, pauses and buffering do not count toward the automatic report minimum.
-- Menus/fullscreen Back behavior and exit-ad ordering are unchanged. Leave the
+- Branded intros, pauses and buffering do not count toward the automatic report minimum.
+- Menus/fullscreen Back behavior is unchanged. Leave the
   player itself to trigger the survey. Automatic episode transitions produce
   only the silent report when selected and eligible.
 - Both paths cover Android mobile and Android TV, including remote Select/Back.
@@ -34,8 +34,8 @@ requirements.
 - A local random draw selects 10% of eligible exits, once per player route.
 - At most once every three days per installation, including skipped surveys.
   The cooldown is saved when the dialog is rendered, not when it is sampled.
-- Back returns immediately. The existing mobile exit ad finishes before the
-  survey appears. Navigating away while waiting cancels the pending survey.
+- Back returns immediately. Navigating away while waiting cancels the pending
+  survey.
 - Android TV supports remote focus, Select, and Back. All app languages have
   localized survey text. Users can skip, tap outside, or press Back.
 
@@ -62,7 +62,7 @@ All carry the same frozen playback context; submitted adds `rating` and `issue`.
 | `quality` | Last observed video height, e.g. `1080p`, otherwise `unknown` |
 | `connection_type` | Last observed connectivity transport, e.g. `wifi`, `mobile`, `none`, `unknown`; multiple transports sorted/joined with `_` |
 | `network_changes` | Number of observed transport changes after initial detection |
-| `session_ms` | Wall time in the player route, including pauses and ads |
+| `session_ms` | Wall time in the player route, including pauses and branded intros |
 | `watched_ms` | Observed content watch time, excluding prerolls, pauses and reported buffering |
 | `startup_ms` | Route entry to first advancing content progress, excluding observed active preroll time; absent if content never starts |
 | `buffering_ms`, `buffer_count` | Post-start content rebuffer time/count; startup waits and duplicate starts do not inflate the count |
@@ -85,8 +85,8 @@ No written comments, stream URLs, headers, tokens or raw error strings are sent.
 `stream_mbps` is **not available internet bandwidth** and is not a speed test.
 It uses the player's existing native byte counter. The baseline starts after
 content progresses (or at the first available subsequent byte observation),
-so initial prebuffering and most ad traffic are excluded. Native byte batches
-can straddle the ad/content boundary. The window includes pauses, idle time and
+so initial prebuffering and most intro traffic are excluded. Native byte batches
+can straddle the intro/content boundary. The window includes pauses, idle time and
 source switches; caching and player download scheduling affect the rate.
 Missing throughput means unavailable/insufficient observation, not zero speed.
 
@@ -112,7 +112,7 @@ There is no prompt or three-day cooldown for automatic reports. A selected
 session is sent only if `watched_ms >= 300000` (five minutes). Pauses, prerolls,
 startup waits and buffering do not count toward this minimum. The minimum also
 applies in debug builds and to sessions with playback errors. Failed starts,
-short watches and exits during ads produce no automatic report. The event still
+short watches and exits during an intro produce no automatic report. The event still
 sends when the player exits or is replaced, not immediately at the five-minute
 mark. There is no additional per-progress event traffic. Sampling is per player
 route, not per HLS segment, quality change, provider switch, or live channel switch. Each new
@@ -202,7 +202,7 @@ SDK enqueue completion, not server acknowledgement. Existing Mixpanel opt-out
 settings remain effective; tracking failures never block Back.
 
 Normal sampling and the survey cooldown apply in debug builds too. Verify movie,
-episode and live playback, failed starts, provider/channel switches, exit ads,
+episode and live playback, failed starts, provider/channel switches,
 remote Back/Select, and network changes. Survey events should include the same
 playback context, with rating/issue added only on submission.
 

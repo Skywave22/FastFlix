@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/ads/ads_policy.dart';
 import '../mobile/screens/plus_screen.dart';
 import '../presentation/billing/plus_controller.dart';
 import '../tv/screens/tv_plus_screen.dart';
@@ -28,12 +27,3 @@ void openCouponLink(NavigatorState navigator, String code) {
   plus.offerCoupon(code);
   if (!plus.signedIn) unawaited(openPlus(navigator.context));
 }
-
-/// Lets ad surfaces offer Plus ("Remove ads", the ad-blocker prompt) only
-/// while it is on sale and the viewer does not have it.
-void installPlusOffer() => AdsPolicy.installPlusOffer(
-      offers: (context) =>
-          Provider.of<PlusController?>(context, listen: false)?.shouldSuggest ??
-          false,
-      open: openPlus,
-    );

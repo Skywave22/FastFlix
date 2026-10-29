@@ -11,8 +11,6 @@ class TVStreamMetadata {
   String? airDate;
   List<String> genres;
 
-  /// The series' TMDB genre ids, when the caller has them; they settle
-  /// whether it is ad-free without asking TMDB.
   List<int>? genreIds;
   List<String> languages;
   List<String> countries;

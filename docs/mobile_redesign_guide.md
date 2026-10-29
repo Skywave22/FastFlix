@@ -21,7 +21,6 @@ The TV app under `lib/tv/` is the reference for tone and structure: artwork firs
 - **Deep links.** Android home-screen widgets and media links open titles through `lib/services/home_widget_navigation_service.dart`, `home_widget_deep_link.dart` and `media_link_navigation_service.dart`. `test/home_widget_*` must stay green.
 - **State restoration.** `AppSessionStateStore` (`lib/services/app_session_state_store.dart`) remembers the selected tab (`handheldDestinations`) and `FlixQuestHomePage` restores it. Update both together (see phase 1).
 - **Offline use.** Downloads (`lib/screens/common/downloads_screen.dart`, `offline_player_screen.dart`) must be reachable and playable with no network.
-- **Ads.** `RemoteHostedAdsBanner` placements are a revenue contract. Move them; do not delete them. The rules for where they may go are in section 4.6.
 - **All three theme modes, plus the extras.** Dark, AMOLED and Light (Settings → Theme mode), and on top of those dynamic colour, the Material 3 toggle, custom and occasional (seasonal) colours, and ambient mode. Every new screen must look correct in each. See section 3.
 - **Four languages, including Arabic (RTL).** Every new string goes into all four files: `assets/translations/{en,es,ar,hi}.json`. Use `EdgeInsetsDirectional`, `AlignmentDirectional` and `start`/`end`, never `left`/`right`, for anything directional. Today only two handheld files handle RTL explicitly; the new UI must be correct in Arabic.
 - **The player.** `lib/screens/common/player.dart` is shared by phone and TV. Its phone controls live in the sibling repo `../flixquest-betterplayer` (`lib/src/controls/better_player_material_controls.dart` and friends), which has its own git history and tests. Player changes are phase 8 only.
@@ -319,7 +318,6 @@ Every phase lists files, specific requirements, and checks. "Screenshots" always
 12. **Upcoming**: poster row with release dates as the badge ("MAY 3").
 13. **Random categorised feed**: keep `RandomCategorizedFeed` if it adds variety, restyled into standard rows.
 
-- **Ads:** at most two `RemoteHostedAdsBanner` on Home, placed after row 6 and after row 10, never above Continue Watching or within the first screen height. Keep the `placement` names.
 - **`UpdateBottom`:** show it as a dismissible banner at the top of My FlixQuest and as a one-time bottom sheet, not in the Home feed.
 - **Pull-to-refresh** reloads the feed (not the hero choice). While refreshing, rows keep their old content.
 - **Loading:** a skeleton of hero, chips and two rows. Errors: a quiet `mutedText` message with a Retry pill, per row.
@@ -392,7 +390,6 @@ Every phase lists files, specific requirements, and checks. "Screenshots" always
    - The in-progress episode shows its progress bar. Unaired episodes are dimmed with "Coming May 3".
    - The page opens on the season being watched.
 8. **Tabs**, a sticky tab bar using the retuned theme: **More Like This** (poster grid) · **Trailers & More** (videos) · **Details** (the rest of today's `_DetailsTab`: cast and crew grid, images, info table, watch providers, reviews, collection, social links).
-   - Ads (`movie_detail`, `tv_detail`) go inside the Details tab, never above the Play button.
 
 **Checks:**
 - Tests for button labels in each resume state, season default, specials ordering, and that Play is absent when `displayWatchNowButton` is off.

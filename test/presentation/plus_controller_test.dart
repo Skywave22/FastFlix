@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flixquest/core/error/failure.dart';
-import 'package:flixquest/data/ads/ads_policy.dart';
 import 'package:flixquest/data/models/billing.dart';
 import 'package:flixquest/data/repositories/billing_repository.dart';
 import 'package:flixquest/presentation/billing/plus_controller.dart';
@@ -128,16 +127,14 @@ void main() {
     store = FakeKvStore();
     owner = ValueNotifier<String?>('user:1');
     now = _start;
-    AdsPolicy.update(adFree: false);
     controller = build();
   });
 
   tearDown(() {
     controller.dispose();
-    AdsPolicy.update(adFree: false);
   });
 
-  test('a verified entitlement turns ads off, and signing out turns them on',
+  test('a verified entitlement is cleared when the account signs out',
       () async {
     await controller.start();
     billing.walletCalls.single.complete(_account());
@@ -145,12 +142,10 @@ void main() {
     await pumpEventQueue();
 
     expect(controller.adFree, isTrue);
-    expect(AdsPolicy.adFree, isTrue);
 
     owner.value = null;
 
     expect(controller.adFree, isFalse);
-    expect(AdsPolicy.adFree, isFalse);
   });
 
   test('an answer for the previous account never reaches the next one',
@@ -164,7 +159,6 @@ void main() {
 
     expect(controller.owner, 'user:2');
     expect(controller.adFree, isFalse);
-    expect(AdsPolicy.adFree, isFalse);
     expect(billing.walletCalls, hasLength(2));
   });
 
@@ -213,7 +207,6 @@ void main() {
       billing.walletCalls.single.complete(_account());
       await pumpEventQueue();
       controller.dispose();
-      AdsPolicy.update(adFree: false);
       billing.walletCalls.clear();
       controller = build();
     }
@@ -226,7 +219,6 @@ void main() {
 
       expect(controller.showingCached, isTrue);
       expect(controller.adFree, isTrue);
-      expect(AdsPolicy.adFree, isTrue);
     });
 
     test('lapses 24 hours after the last check', () async {
@@ -236,7 +228,6 @@ void main() {
       await controller.start();
 
       expect(controller.adFree, isFalse);
-      expect(AdsPolicy.adFree, isFalse);
     });
 
     test('belongs to its account only', () async {
@@ -336,18 +327,7 @@ void main() {
 
     expect(redemption.freeDays, 14);
     expect(controller.adFree, isTrue);
-    expect(AdsPolicy.adFree, isTrue);
     expect(controller.celebrationPending, isTrue);
-  });
-
-  test('suggests Plus only while it is on sale and not owned', () async {
-    await controller.start();
-    await pumpEventQueue();
-    expect(controller.shouldSuggest, isTrue);
-
-    billing.walletCalls.single.complete(_account());
-    await pumpEventQueue();
-    expect(controller.shouldSuggest, isFalse);
   });
 
   test('server time, not the device clock, decides expiry', () async {

@@ -245,9 +245,7 @@ class _ProfileLayout extends StatelessWidget {
                               icon: PhosphorIcons.signOut(),
                               onActivate: onSignOut,
                             ),
-                            if (!isGuest ||
-                                (context.watch<PlusController?>()?.shouldSuggest ??
-                                    false))
+                            if (!isGuest)
                               TvPillButton(
                                 label: tr('plus_name'),
                                 leading: const PlusMark(),
@@ -284,9 +282,7 @@ class _PlusLine extends StatelessWidget {
     final until = plus.activeUntil;
     final String text;
     if (until != null) {
-      text = tr('plus_ad_free_until', args: [formatDay(context, until)]);
-    } else if (plus.shouldSuggest) {
-      text = plus.signedIn ? tr('plus_cta_member') : tr('plus_cta_guest');
+      text = tr('plus_membership_until', args: [formatDay(context, until)]);
     } else {
       return const SizedBox.shrink();
     }

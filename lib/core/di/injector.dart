@@ -6,7 +6,6 @@ import '../../data/repositories/recently_watched_repository.dart';
 import '../../data/repositories/wellness_repository.dart';
 import '../../data/sync/laravel_sync_coordinator.dart';
 import '../../data/sync/library_scope.dart';
-import 'package:flixquest/data/repositories/ads_repository.dart';
 import 'package:flixquest/data/repositories/auth_repository.dart';
 import 'package:flixquest/data/repositories/billing_repository.dart';
 import 'package:flixquest/presentation/billing/plus_controller.dart';
@@ -44,7 +43,6 @@ class AppInjector {
     required this.tmdbRepository,
     required this.authRepository,
     required this.configRepository,
-    required this.adsRepository,
     required this.deviceRepository,
     required this.announcementRepository,
     required this.session,
@@ -65,14 +63,13 @@ class AppInjector {
 
   final AuthRepository authRepository;
   final ConfigRepository configRepository;
-  final AdsRepository adsRepository;
   final DeviceRepository deviceRepository;
   final AnnouncementRepository announcementRepository;
   final SessionViewModel session;
   final LaravelSyncCoordinator syncCoordinator;
   final BillingRepository billingRepository;
 
-  /// FlixQuest Plus for the signed-in account; it also drives AdsPolicy.
+  /// FlixQuest Plus for the signed-in account.
   final PlusController plus;
 
   /// Existing repositories share this client, so their next request uses the
@@ -85,7 +82,6 @@ class AppInjector {
     plus.dispose();
     session.dispose();
     syncCoordinator.dispose();
-    await adsRepository.dispose();
     publicDio.close(force: true);
     laravelDio.close(force: true);
     await httpCache.close();
@@ -164,7 +160,6 @@ Future<AppInjector> buildInjector({
     tmdbRepository: TmdbRepository(TmdbApi(publicClient)),
     authRepository: auth,
     configRepository: ConfigRepository(laravelClient, preferences),
-    adsRepository: AdsRepository(laravelClient),
     deviceRepository: DeviceRepository(laravelClient),
     announcementRepository: AnnouncementRepository(laravelClient),
     session: session,

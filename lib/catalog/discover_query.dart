@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../constants/api_constants.dart';
 import '../services/tmdb_connectivity.dart';
 import 'media_item.dart';
+import 'anime_genre.dart';
 
 /// One option in a Discover filter: its label's translation key (or a name
 /// shown as is) and the value TMDB takes.
@@ -55,6 +56,7 @@ class DiscoverQuery {
     (label: 'action', value: '28'),
     (label: 'adventure', value: '12'),
     (label: 'animation', value: '16'),
+    (label: 'anime', value: animeGenreValue),
     (label: 'comedy', value: '35'),
     (label: 'crime', value: '80'),
     (label: 'documentary', value: '99'),
@@ -76,6 +78,7 @@ class DiscoverQuery {
   static const seriesGenres = <DiscoverOption>[
     (label: 'action_and_adventure', value: '10759'),
     (label: 'animation', value: '16'),
+    (label: 'anime', value: animeGenreValue),
     (label: 'comedy', value: '35'),
     (label: 'crime', value: '80'),
     (label: 'documentary', value: '99'),
@@ -147,7 +150,7 @@ class DiscoverQuery {
       if (movie) 'primary_release_year': year else 'first_air_date_year': year,
       if (!movie) 'with_status': seriesStatuses[status].value,
       'vote_count.gte': '$minimumRatings',
-      'with_genres': genres.join(','),
+      ...genreParameters(genres),
       'with_watch_providers': providers.join(','),
     };
     return Uri.parse(

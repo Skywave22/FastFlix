@@ -1,0 +1,157 @@
+name: Android APK
+
+on:
+  push:
+    # Run an artifact-only build on the active work branch; only tags publish.
+    branches:
+      - 'arena/f6eedbd9-fastflix'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing tag to build and publish (leave blank for an artifact-only build)'
+        required: false
+        type: string
+
+# The GitHub token is used to create/update the release; checkout only reads code.
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-${{ github.event_name == 'push' && github.ref_name || inputs.release_tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and publish signed APKs
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: FastFlix
+    steps:
+      - name: Check out the app
+        uses: actions/checkout@v7
+        with:
+          path: FastFlix
+          # A manual release must build the tag being published, not the branch
+          # from which the workflow was dispatched.
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && format('refs/tags/{0}', inputs.release_tag) || github.ref }}
+          persist-credentials: false
+
+      - name: Check out the pinned sibling player
+        uses: actions/checkout@v7
+        with:
+          repository: BeamlakAschalew/flixquest-betterplayer
+          ref: 06f36400831b7b9119bd0c043034e1cf39de2d5a
+          path: flixquest-betterplayer
+          persist-credentials: false
+
+      - name: Test release configuration validation
+        run: python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+
+      - name: Prepare release configuration and signing
+        env:
+          FLIXQUEST_ENV: ${{ secrets.FLIXQUEST_ENV }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: python3 .github/scripts/prepare_android_release.py
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Verify signing keystore and alias
+        env:
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          keytool -list -keystore "$RUNNER_TEMP/flixquest-release-keystore.jks" \
+            -storepass:env ANDROID_STORE_PASSWORD -alias "$ANDROID_KEY_ALIAS" > /dev/null
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install required Android components
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: FastFlix/.fvmrc
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Run feature tests
+        run: |
+          flutter test --no-pub \
+            test/anime_genre_test.dart \
+            test/download_settings_test.dart \
+            test/player_audio_choices_test.dart
+
+      - name: Build universal APK
+        run: |
+          flutter build apk --release --flavor prod --no-pub
+          mkdir -p release-apks
+          cp build/app/outputs/flutter-apk/app-prod-release.apk release-apks/FlixQuest-universal.apk
+
+      - name: Run Android download settings tests
+        run: |
+          ./android/gradlew -p android :app:testProdDebugUnitTest \
+            --tests 'dev.beamlak.flixquest_v2.downloads.DownloadSettingsTest'
+
+      - name: Build per-ABI APKs
+        run: |
+          flutter build apk --release --flavor prod --split-per-abi --no-pub
+          for abi in armeabi-v7a arm64-v8a x86_64; do
+            cp "build/app/outputs/flutter-apk/app-${abi}-prod-release.apk" "release-apks/FlixQuest-${abi}.apk"
+          done
+
+      - name: Verify signatures and generate checksums
+        run: |
+          for apk in release-apks/*.apk; do
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+          done
+          (cd release-apks && sha256sum ./*.apk > SHA256SUMS.txt)
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: FlixQuest-android-apks
+          path: FastFlix/release-apks/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Attach APKs to GitHub release
+        if: ${{ (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+        run: |
+          git check-ref-format "refs/tags/$RELEASE_TAG"
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            # This also preserves the draft/prerelease state and existing notes.
+            gh release upload "$RELEASE_TAG" release-apks/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            release_flags=(--verify-tag --generate-notes)
+            # A semantic-version prerelease must not become the latest stable release.
+            if [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+              release_flags+=(--prerelease)
+            fi
+            gh release create "$RELEASE_TAG" release-apks/* --repo "$GITHUB_REPOSITORY" \
+              "${release_flags[@]}"
+          fi
+
+      - name: Remove temporary configuration and signing material
+        if: ${{ always() }}
+        working-directory: ${{ github.workspace }}
+        run: rm -f FastFlix/.env FastFlix/android/key.properties "$RUNNER_TEMP/flixquest-release-keystore.jks"

@@ -129,8 +129,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       kicker: tr('browse_with_filters').toUpperCase(),
       settings: context.read<SettingsProvider>(),
       dependencies: context.read<AppDependencyProvider>(),
-      // The placements the old Discover results pages reported.
-      adPlacement: movie ? 'discover_movies' : 'discover_tv',
     );
     final open = widget.openResults;
     if (open != null) return open(context, results);

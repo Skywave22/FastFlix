@@ -1,6 +1,7 @@
 // ignore_for_file: non_constant_identifier_names
 
 import '/constants/api_constants.dart';
+import '../catalog/anime_genre.dart';
 
 class Endpoints {
   static String discoverMoviesUrl(int page, String l) {
@@ -137,7 +138,9 @@ class Endpoints {
         '&sort_by=popularity.desc'
         '&include_video=false'
         '&page=$page'
-        '&with_genres=$genreId&language=$l';
+        '&with_genres=${genreId == animeGenreId ? animationGenreValue : genreId}'
+        '${genreId == animeGenreId ? '&with_original_language=ja' : ''}'
+        '&language=$l';
   }
 
   static String movieReviewsUrl(int movieId, int page, String l) {
@@ -321,7 +324,8 @@ class Endpoints {
         '&language=$l'
         '&sort_by=popularity.desc'
         '&page=$page'
-        '&with_genres=$genreId';
+        '&with_genres=${genreId == animeGenreId ? animationGenreValue : genreId}'
+        '${genreId == animeGenreId ? '&with_original_language=ja' : ''}';
   }
 
   static String getTVCreditsForPerson(int id, String l) {

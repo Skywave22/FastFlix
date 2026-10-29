@@ -26,7 +26,7 @@ Preflight exits nonzero for missing hard prerequisites; `--strict` also rejects 
 
 ## Disposable end-to-end rehearsal
 
-`test/integration/laravel_migration_e2e_test.dart` uses the real app repositories over HTTP. It creates a unique synthetic account, signs in as two devices, checks bookmark union, recent-history LWW, actual 25-hour skew rejection/recovery, 451 wellness sessions across uploads/pages, bootstrap/ads ETags, OneSignal subscription registration, token-scoped logout and account deletion. It deletes its synthetic account on cleanup. It skips in normal test runs unless both defines below are supplied.
+`test/integration/laravel_migration_e2e_test.dart` uses the real app repositories over HTTP. It creates a unique synthetic account, signs in as two devices, checks bookmark union, recent-history LWW, actual 25-hour skew rejection/recovery, 451 wellness sessions across uploads/pages, bootstrap ETags, OneSignal subscription registration, token-scoped logout and account deletion. It deletes its synthetic account on cleanup. It skips in normal test runs unless both defines below are supplied.
 
 Use an isolated local backend or disposable staging database, never production. Disable on-demand Firebase account lookup for this synthetic rehearsal. For an isolated SQLite local run, set `DB_CONNECTION=sqlite`, `DB_DATABASE` to a newly created absolute temporary file, `CACHE_STORE=array`, `QUEUE_CONNECTION=database`, and `FIREBASE_MIGRATION_ENABLED=false` for both migrations and the server. Run `php artisan migrate --force`, then `php artisan serve --host=127.0.0.1 --port=8018 --no-reload`. **The `--no-reload` option is necessary:** Laravel's reload mode otherwise drops most inherited environment overrides before launching its HTTP child process.
 

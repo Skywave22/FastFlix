@@ -634,19 +634,6 @@ class AnalyticsService {
     });
   }
 
-  /// [outcome] is `detected`, `cleared` or `cancelled`.
-  void trackAdBlockerGate({
-    required String outcome,
-    required bool download,
-    required bool television,
-  }) {
-    _track('Ad Blocker Gate', {
-      'Outcome': outcome,
-      'Action': download ? 'download' : 'play',
-      'Television': television,
-    });
-  }
-
   void trackImageDownloaded({required String imageType}) {
     _track('Image Downloaded', {
       'Image Type': imageType,

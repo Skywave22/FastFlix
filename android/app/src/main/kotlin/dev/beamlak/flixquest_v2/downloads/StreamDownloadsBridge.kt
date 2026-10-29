@@ -44,6 +44,15 @@ class StreamDownloadsBridge(
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "getDownloads" -> runResult(result) { downloadMaps() }
+            "getDownloadSettings" -> runResult(result) { store.getDownloadSettings() }
+            "setDownloadSettings" -> {
+                val arguments = call.arguments as? Map<*, *>
+                if (arguments == null) {
+                    result.error("INVALID_ARGUMENTS", "Download settings are required.", null)
+                } else {
+                    runResult(result) { store.updateDownloadSettings(arguments) }
+                }
+            }
             "getAudioTracks" -> {
                 val arguments = call.arguments as? Map<*, *>
                 if (arguments == null) {

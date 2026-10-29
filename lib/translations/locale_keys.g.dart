@@ -495,7 +495,6 @@ abstract class  LocaleKeys {
   static const no_buy_tv = 'no_buy_tv';
   static const no_stream_tv = 'no_stream_tv';
   static const no_rent_tv = 'no_rent_tv';
-  static const no_ads_tv = 'no_ads_tv';
   static const cinemax = 'cinemax';
   static const no_cast = 'no_cast';
   static const no_overview_tv = 'no_overview_tv';
@@ -1060,6 +1059,7 @@ abstract class  LocaleKeys {
   static const player_screen_locked = 'player_screen_locked';
   static const player_tap_to_unlock = 'player_tap_to_unlock';
   static const player_audio_subtitles = 'player_audio_subtitles';
+  static const player_audio_subtitles_description = 'player_audio_subtitles_description';
   static const player_audio = 'player_audio';
   static const player_subtitles = 'player_subtitles';
   static const player_off = 'player_off';
@@ -1496,12 +1496,6 @@ abstract class  LocaleKeys {
   static const video_quality = 'video_quality';
   static const tv_current_provider = 'tv_current_provider';
   static const tv_font_weight_light = 'tv_font_weight_light';
-  static const ad_blocker_title = 'ad_blocker_title';
-  static const ad_blocker_playback_stopped = 'ad_blocker_playback_stopped';
-  static const ad_blocker_message = 'ad_blocker_message';
-  static const ad_blocker_private_dns_hint = 'ad_blocker_private_dns_hint';
-  static const ad_blocker_still_detected = 'ad_blocker_still_detected';
-  static const ad_blocker_retry = 'ad_blocker_retry';
   static const download_choose_audio = 'download_choose_audio';
   static const download_audio_description = 'download_audio_description';
   static const download_audio_loading = 'download_audio_loading';
@@ -1531,8 +1525,8 @@ abstract class  LocaleKeys {
   static const streaming_dnd_open_settings = 'streaming_dnd_open_settings';
   static const streaming_dnd_unavailable = 'streaming_dnd_unavailable';
   static const plus_name = 'plus_name';
-  static const plus_youre_ad_free = 'plus_youre_ad_free';
-  static const plus_ad_free_until = 'plus_ad_free_until';
+  static const plus_membership_active = 'plus_membership_active';
+  static const plus_membership_until = 'plus_membership_until';
   static const plus_renews_on = 'plus_renews_on';
   static const plus_price_line = 'plus_price_line';
   static const plus_come_back = 'plus_come_back';
@@ -1540,8 +1534,6 @@ abstract class  LocaleKeys {
   static const plus_get_plus = 'plus_get_plus';
   static const plus_sign_in_short = 'plus_sign_in_short';
   static const plus_sign_in_required = 'plus_sign_in_required';
-  static const plus_go_ad_free = 'plus_go_ad_free';
-  static const plus_remove_ads = 'plus_remove_ads';
   static const plus_days_left = 'plus_days_left';
   static const plus_welcome_title = 'plus_welcome_title';
   static const plus_welcome_body = 'plus_welcome_body';
@@ -1563,10 +1555,6 @@ abstract class  LocaleKeys {
   static const plus_add_funds = 'plus_add_funds';
   static const plus_redeem_code = 'plus_redeem_code';
   static const plus_what_you_get = 'plus_what_you_get';
-  static const plus_benefit_banners = 'plus_benefit_banners';
-  static const plus_benefit_popups = 'plus_benefit_popups';
-  static const plus_benefit_video = 'plus_benefit_video';
-  static const plus_benefit_blocker = 'plus_benefit_blocker';
   static const plus_benefit_devices = 'plus_benefit_devices';
   static const plus_wallet_reference = 'plus_wallet_reference';
   static const plus_reference_copied = 'plus_reference_copied';
@@ -1720,7 +1708,6 @@ abstract class  LocaleKeys {
   static const plus_delete_pending = 'plus_delete_pending';
   static const plus_delete_anyway = 'plus_delete_anyway';
   static const plus_tv_sign_in_body = 'plus_tv_sign_in_body';
-  static const plus_tv_chip_no_ads = 'plus_tv_chip_no_ads';
   static const plus_tv_chip_devices = 'plus_tv_chip_devices';
   static const plus_error_offline = 'plus_error_offline';
   static const plus_error_insufficient_balance = 'plus_error_insufficient_balance';
@@ -1786,7 +1773,6 @@ abstract class  LocaleKeys {
   static const tv_create_free_account = 'tv_create_free_account';
   static const tv_landing_pitch = 'tv_landing_pitch';
   static const tv_benefit_resume = 'tv_benefit_resume';
-  static const tv_benefit_plus = 'tv_benefit_plus';
   static const tv_guest_caption = 'tv_guest_caption';
   static const tv_guest_confirm_title = 'tv_guest_confirm_title';
   static const tv_guest_confirm_body = 'tv_guest_confirm_body';
@@ -1913,5 +1899,20 @@ abstract class  LocaleKeys {
   static const device_platform_ios = 'device_platform_ios';
   static const device_platform_android = 'device_platform_android';
   static const device_last_used = 'device_last_used';
+
+  static const anime = 'anime';
+  static const download_settings = 'download_settings';
+  static const download_settings_description = 'download_settings_description';
+  static const download_segments = 'download_segments';
+  static const download_segments_description = 'download_segments_description';
+  static const download_parallel = 'download_parallel';
+  static const download_parallel_description = 'download_parallel_description';
+  static const download_retries = 'download_retries';
+  static const download_retries_description = 'download_retries_description';
+  static const download_unmetered = 'download_unmetered';
+  static const download_unmetered_description = 'download_unmetered_description';
+  static const download_settings_error = 'download_settings_error';
+  static const download_eta_minutes = 'download_eta_minutes';
+  static const download_eta_hours = 'download_eta_hours';
 
 }

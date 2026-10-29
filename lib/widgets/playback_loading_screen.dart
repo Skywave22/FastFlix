@@ -15,19 +15,11 @@ import '../functions/function.dart';
 import '../models/provider_load_state.dart';
 import '../provider/app_dependency_provider.dart';
 import '../provider/settings_provider.dart';
-import 'hosted_ads_banner.dart';
 import 'provider_loading_widget.dart';
 
 /// Landscape screens at least this wide (TV at 960, landscape phones and
 /// tablets) put the title over full-bleed artwork instead of beneath it.
 const _wideMinWidth = 560.0;
-
-/// Below this, the wide layout has no room for the ad column beside the race
-/// and stacks it underneath instead.
-const _adsBesideMinWidth = 760.0;
-
-/// The ad column's width: a medium rectangle and its pass button.
-const _adsWidth = 300.0;
 
 /// The hand-off between a title page and its player.
 ///
@@ -184,8 +176,6 @@ class _PortraitLoadingLayout extends StatelessWidget {
         _TitleBlock(title: title, subtitle: subtitle, wide: false),
         const SizedBox(height: AppSpace.xxl),
         race,
-        const SizedBox(height: AppSpace.xxxl),
-        const Center(child: _LoadingAds()),
       ],
     );
   }
@@ -204,40 +194,20 @@ class _WideLoadingLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final adsBeside = constraints.maxWidth >= _adsBesideMinWidth;
-        final details = Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _TitleBlock(title: title, subtitle: subtitle, wide: true),
-                const SizedBox(height: AppSpace.xxl),
-                race,
-                if (!adsBeside) ...<Widget>[
-                  const SizedBox(height: AppSpace.xxl),
-                  const _LoadingAds(),
-                ],
-              ],
-            ),
-          ),
-        );
-        if (!adsBeside) {
-          return Align(alignment: Alignment.center, child: details);
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Expanded(child: details),
-            const SizedBox(width: 40),
-            const SizedBox(width: _adsWidth, child: _LoadingAds()),
+            _TitleBlock(title: title, subtitle: subtitle, wide: true),
+            const SizedBox(height: AppSpace.xxl),
+            race,
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -284,16 +254,6 @@ class _TitleBlock extends StatelessWidget {
       ],
     );
   }
-}
-
-/// A medium rectangle. The viewer is waiting anyway, so it earns a viewable
-/// impression on every play without delaying it.
-class _LoadingAds extends StatelessWidget {
-  const _LoadingAds();
-
-  @override
-  Widget build(BuildContext context) =>
-      const BannerAdSlot(placement: 'stream_loading');
 }
 
 class _PlaybackArtwork extends StatelessWidget {
@@ -375,8 +335,7 @@ class _PlaybackArtwork extends StatelessWidget {
                 ),
               ),
             if (wide) ...<Widget>[
-              // The text column sits on the start side; the ad column and the
-              // rest of the artwork stay readable under a lighter veil.
+              // The text column sits on the start side of the artwork.
               ColoredBox(color: palette.scrim(.42)),
               DecoratedBox(
                 decoration: BoxDecoration(

@@ -93,7 +93,7 @@ class PlaylistEntry {
   final double? voteAverage;
   final String? releaseDate;
 
-  /// Kept so a title opened from a list is placed in the right ad policy.
+  /// Preserve the title's genres when it is opened from a playlist.
   final List<int> genreIds;
   final String? addedAt;
 

@@ -21,13 +21,10 @@ import '../../models/wellness.dart';
 import '../../provider/app_dependency_provider.dart';
 import '../../provider/settings_provider.dart';
 import '../../provider/wellness_provider.dart';
-import '../../services/adsterra_playback_ads_service.dart';
-import '../../widgets/ad_block_playback_guard.dart';
 import '../../services/analytics_service.dart';
 import '../../services/daddylive_service.dart';
 import '../../services/playback_wake_lock.dart';
 import '../../services/stream_intro_service.dart';
-import 'player/player_preroll_ad.dart';
 import 'player/player_sheet_ui.dart';
 import 'player/player_feedback_ui.dart';
 import 'player/stream_feedback_prompt.dart';
@@ -110,8 +107,6 @@ class _LivePlayerState extends State<LivePlayer> {
   final BetterPlayerTvControlsController _tvControlsController =
       BetterPlayerTvControlsController();
   final StreamIntroService _introService = StreamIntroService();
-  late final PlayerPrerollAd _prerollAd =
-      PlayerPrerollAd(television: widget.useTvControls);
   late BetterPlayerControlsConfiguration betterPlayerControlsConfiguration;
   late BetterPlayerBufferingConfiguration betterPlayerBufferingConfiguration;
 
@@ -121,7 +116,6 @@ class _LivePlayerState extends State<LivePlayer> {
   final _automaticStreamReport = AutomaticStreamReport();
   final _feedbackConnection = StreamFeedbackConnection();
   bool _exitingPlayer = false;
-  bool _adBlockStopped = false;
 
   /// Set by an explicit pause (the remote, or the app going to the
   /// background) and cleared by play; the screen may sleep meanwhile.
@@ -274,24 +268,20 @@ class _LivePlayerState extends State<LivePlayer> {
   }
 
   /// Keeps the screen on while live playback is expected: playing, buffering,
-  /// or reconnecting. A pause, a stream that gave up reconnecting, or the
-  /// ad-block stop lets the TV's screen saver and sleep take over again, as
+  /// or reconnecting. A pause or a stream that gave up reconnecting lets
+  /// the TV's screen saver and sleep take over again, as
   /// Fire TV requires.
   void _syncWakeLock() {
     final failure = _playbackFailure.value;
     final terminalFailure = failure != null && !failure.retrying;
     PlaybackWakeLock.instance.set(
       this,
-      wanted: !_pausedByUser && !terminalFailure && !_adBlockStopped,
+      wanted: !_pausedByUser && !terminalFailure,
     );
   }
 
   void _checkPlaybackProgress() {
-    if (!mounted || _adBlockStopped) return;
-    if (!widget.useTvControls) {
-      AdsterraPlaybackAdsService.instance.notePlayerWatch(
-          context, Duration(milliseconds: _wellnessTracker.watchedMs()));
-    }
+    if (!mounted) return;
     final value = _betterPlayerController.videoPlayerController?.value;
     if (_isSwitching ||
         _recoveryStartedAt != null ||
@@ -349,31 +339,18 @@ class _LivePlayerState extends State<LivePlayer> {
     );
   }
 
-  /// The channel the viewer opened gets the same video ad as movies, asked
-  /// for alongside the branded intro; it replaces the intro when one plays.
-  /// Channel switches and reconnects inside the player play no ad.
+  /// Optionally play the app's branded intro before the first channel.
   Future<bool> _setupStreamWithIntro(
     BetterPlayerDataSource dataSource,
     int operation,
   ) async {
-    final adFuture = _prerollAd.load(_appDependencies.vastPreroll,
-        cancelled: () => !_isActiveSourceOperation(operation));
     StreamIntroConfig intro = const StreamIntroConfig.disabled();
     try {
       intro = await _introService.fetch(widget.scraperApiUrl);
     } catch (error) {
       debugPrint('[LivePlayer] Branded intro unavailable: $error');
     }
-    final preroll = await adFuture;
     if (!_isActiveSourceOperation(operation)) return false;
-    if (preroll != null) {
-      _prerollAd.start(preroll, _betterPlayerController);
-      return _setupDataSourceForOperation(
-        operation,
-        dataSource,
-        preRollDataSource: PlayerPrerollAd.dataSource(preroll.media),
-      );
-    }
     return _setupDataSourceForOperation(
       operation,
       dataSource,
@@ -440,9 +417,6 @@ class _LivePlayerState extends State<LivePlayer> {
                 onExit: _exitPlayer,
               )
           : null,
-      // The video ad's own controls replace the player's while it plays.
-      preRollOverlayBuilder: (context, _) =>
-          _prerollAd.overlay(context, onExit: _exitPlayer),
       // White controls; the accent belongs to the timeline, which a live
       // stream does not have.
       loadingColor: Colors.white,
@@ -518,7 +492,6 @@ class _LivePlayerState extends State<LivePlayer> {
 
   void _updateDiscoveredVariants(LiveStreamDiscovery discovery) {
     if (!mounted ||
-        _adBlockStopped ||
         !identical(_streamDiscovery, discovery)) {
       return;
     }
@@ -834,7 +807,7 @@ class _LivePlayerState extends State<LivePlayer> {
   }
 
   bool _isActiveSourceOperation(int generation) =>
-      mounted && !_adBlockStopped && generation == _sourceOperationGeneration;
+      mounted && generation == _sourceOperationGeneration;
 
   Future<bool> _setupDataSourceForOperation(
     int operation,
@@ -843,8 +816,6 @@ class _LivePlayerState extends State<LivePlayer> {
   }) async {
     if (!_isActiveSourceOperation(operation)) return false;
     _pendingSourceUrl = dataSource.url;
-    // A switch or reconnect replaces the sequence, ad included.
-    if (preRollDataSource == null) _prerollAd.finish('closed');
     if (preRollDataSource != null) {
       await _betterPlayerController
           .setupDataSourceWithPreRoll(
@@ -922,7 +893,6 @@ class _LivePlayerState extends State<LivePlayer> {
   }
 
   void _onPlayerEvent(BetterPlayerEvent event) {
-    if (_adBlockStopped) return;
     if (_betterPlayerController.isPreRollActive ||
         event.betterPlayerEventType == BetterPlayerEventType.preRollEnded ||
         _isRelevantPlayerEvent(event)) {
@@ -935,13 +905,7 @@ class _LivePlayerState extends State<LivePlayer> {
         totalBytes: _betterPlayerController.networkBytesTransferred,
       );
     }
-    // The ad's tracking must end however the sequence reports it.
     if (event.betterPlayerEventType == BetterPlayerEventType.preRollEnded) {
-      _prerollAd.finish(
-        event.parameters?[BetterPlayerController.preRollEndReasonParameter]
-                as String? ??
-            'completed',
-      );
       return;
     }
     if (!_isRelevantPlayerEvent(event)) return;
@@ -956,7 +920,6 @@ class _LivePlayerState extends State<LivePlayer> {
         }
         break;
       case BetterPlayerEventType.play:
-        if (_betterPlayerController.isPreRollActive) _prerollAd.onPlay();
         _startWatchClock();
         _wellnessTracker.play();
         _trackPlayerEvent('play');
@@ -964,7 +927,6 @@ class _LivePlayerState extends State<LivePlayer> {
         _syncWakeLock();
         break;
       case BetterPlayerEventType.pause:
-        if (_betterPlayerController.isPreRollActive) _prerollAd.onPause();
         _wasPlayingBeforeBuffering = false;
         _stopWatchClock();
         _wellnessTracker.pause();
@@ -1378,7 +1340,6 @@ class _LivePlayerState extends State<LivePlayer> {
       channelSwitchCount: _channelSwitchCount,
     );
     unawaited(_persistWellnessSession());
-    _prerollAd.dispose();
     _betterPlayerController.dispose();
     _introService.close();
     SystemChrome.setPreferredOrientations([
@@ -1390,27 +1351,8 @@ class _LivePlayerState extends State<LivePlayer> {
     super.dispose();
   }
 
-  void _stopForAdBlocker() {
-    if (_adBlockStopped) return;
-    _adBlockStopped = true;
-    _syncWakeLock();
-    _adoptStreamDiscovery(null);
-    _exitingPlayer = true;
-    _sourceOperationGeneration++;
-    _watchdogTimer?.cancel();
-    _cancelPlaybackRecovery();
-    _prerollAd.dispose();
-    _betterPlayerController.dispose(forceDispose: true);
-  }
-
   @override
-  Widget build(BuildContext context) => AdBlockPlaybackGuard(
-        stopPlayback: _stopForAdBlocker,
-        television: widget.useTvControls,
-        child: _buildPlayback(context),
-      );
-
-  Widget _buildPlayback(BuildContext context) {
+  Widget build(BuildContext context) {
     _handleScreenOrientation(context);
     if (_isPortraitInlineLayout(context)) {
       return PopScope(
@@ -1671,15 +1613,10 @@ class _LivePlayerState extends State<LivePlayer> {
           ...metadata,
           ...measurement.parameters(totalBytes: bytes),
         });
-    final watched = Duration(milliseconds: _wellnessTracker.watchedMs());
     scheduleStreamFeedbackAfterExit(
       context,
       measurement: measurement,
       parameters: parameters,
-      beforePrompt: widget.useTvControls
-          ? null
-          : (context) => AdsterraPlaybackAdsService.instance
-              .playerExit(context, watched: watched),
     );
     Navigator.of(context).pop();
   }

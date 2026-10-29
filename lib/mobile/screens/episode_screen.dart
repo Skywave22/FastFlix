@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../catalog/details_controller.dart';
-import '../../data/ads/content_ads.dart';
 import '../../catalog/details_play.dart';
 import '../../catalog/media_item.dart';
 import '../../catalog/season_source.dart';
@@ -31,8 +30,6 @@ import '../widgets/media_art.dart';
 import '../widgets/page_kit.dart' show ReadableWidth;
 import '../widgets/section_header.dart';
 import 'credits_screen.dart';
-import '../../widgets/hosted_ads_banner.dart' show HostedBannerVariant;
-import 'home_screen.dart' show HomeAdSlot;
 
 /// An episode's page: its still, its name and facts, Play (or Resume) and
 /// Download, the synopsis and who made it, the rest of its season to move
@@ -45,7 +42,6 @@ class EpisodeScreen extends StatefulWidget {
     this.seasons,
     this.source,
     this.history,
-    this.adBuilder,
     this.now,
     super.key,
   });
@@ -65,7 +61,6 @@ class EpisodeScreen extends StatefulWidget {
 
   /// What the viewer has watched; the recently watched store by default.
   final WatchHistory? history;
-  final WidgetBuilder? adBuilder;
   final DateTime Function()? now;
 
   @override
@@ -239,24 +234,13 @@ class _EpisodeScreenState extends State<EpisodeScreen>
     return season == null || number == null ? null : 'S$season:E$number';
   }
 
-  /// A Kids or Family series' pages show no ads.
   @override
-  Widget build(BuildContext context) => ContentAdGate(
-        content: AdContent.of(widget.series),
-        child: Builder(builder: _page),
-      );
-
-  Widget _page(BuildContext context) {
+  Widget build(BuildContext context) {
     final palette = AppPalette.of(context);
     final history = _history(context);
     final title = (_episode.name ?? '').trim().isEmpty
         ? (_label ?? widget.series.title)
         : _episode.name!.trim();
-    final ad = widget.adBuilder?.call(context) ??
-        HomeAdSlot(
-          placement: 'episode_detail',
-          variant: HostedBannerVariant.tall,
-        );
     if (AppBreakpoints.isTablet(context) &&
         MediaQuery.sizeOf(context).width >= AppBreakpoints.wide) {
       // A wide tablet: the episode beside the rest of its season.
@@ -272,7 +256,7 @@ class _EpisodeScreenState extends State<EpisodeScreen>
             size: ArtSize.still,
             alignment: Alignment.topCenter,
           ),
-          start: <Widget>[_summary(context, title, history), ad],
+          start: <Widget>[_summary(context, title, history)],
           end: <Widget>[
             SliverToBoxAdapter(child: _seasonRow(context, history)),
             SliverToBoxAdapter(child: _cast(context, title)),
@@ -305,7 +289,6 @@ class _EpisodeScreenState extends State<EpisodeScreen>
           ),
           SliverToBoxAdapter(
               child: ReadableWidth(child: _summary(context, title, history))),
-          SliverToBoxAdapter(child: ad),
           SliverToBoxAdapter(
               child: ReadableWidth(child: _seasonRow(context, history))),
           SliverToBoxAdapter(

@@ -9,8 +9,7 @@ import '../provider/app_dependency_provider.dart';
 import '../provider/settings_provider.dart';
 import 'screens/collection_screen.dart';
 
-/// Opens [genre]'s titles of [kind] in a grid, reporting the ad placement
-/// the old genre pages did.
+/// Opens [genre]'s titles of [kind] in a grid.
 Future<void> openGenreCollection(
   BuildContext context,
   MediaKind kind,
@@ -30,8 +29,6 @@ Future<void> openGenreCollection(
           id: collection.id,
           title: collection.title,
           kicker: tr(movie ? 'movie_genres' : 'series_genres').toUpperCase(),
-          adPlacement: movie ? 'genre_movies' : 'genre_tv',
-          adFree: collection.adFree,
           loadPage: collection.loadPage,
         ),
       ),

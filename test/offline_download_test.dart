@@ -248,6 +248,8 @@ void main() {
     expect(find.text('Downloading'), findsOneWidget);
     expect(find.text('100.0 MB'), findsOneWidget);
     expect(find.text('2.0 MB/s'), findsOneWidget);
+    expect(find.byKey(const Key('download_eta')), findsOneWidget);
+    expect(find.byKey(const Key('open_download_settings')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('download-actions-movie_9')));
     await tester.pumpAndSettle();
