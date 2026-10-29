@@ -128,10 +128,10 @@ class _OfflinePlayerScreenState extends State<OfflinePlayerScreen> {
     );
     _controller = BetterPlayerController(
       BetterPlayerConfiguration(
-        autoDetectFullscreenDeviceOrientation: true,
-        autoDetectFullscreenAspectRatio: true,
+        autoDetectFullscreenDeviceOrientation: !settings.screenFill,
+        autoDetectFullscreenAspectRatio: !settings.screenFill,
         autoPlay: true,
-        fit: BoxFit.contain,
+        fit: settings.screenFill ? BoxFit.cover : BoxFit.contain,
         autoDispose: true,
         allowedScreenSleep: false,
         controlsConfiguration: controls,

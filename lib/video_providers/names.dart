@@ -1,3 +1,5 @@
+import 'language_priority.dart';
+
 enum VideoProviderType {
   directVixSrc,
   scraperApi,
@@ -27,6 +29,9 @@ class VideoProvider {
   final String? content;
   final VideoProviderType type;
   final String? apiId;
+
+  bool get advertisesHindi =>
+      [fullName, alias, content, apiId].any(LanguagePriority.isHindi);
 
   String get displayName {
     final value = alias?.trim();

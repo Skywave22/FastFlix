@@ -1915,4 +1915,28 @@ abstract class  LocaleKeys {
   static const download_eta_minutes = 'download_eta_minutes';
   static const download_eta_hours = 'download_eta_hours';
 
+  static const choose_app_logo = 'choose_app_logo';
+  static const choose_app_logo_description = 'choose_app_logo_description';
+  static const logo_play = 'logo_play';
+  static const logo_wing = 'logo_wing';
+  static const logo_f = 'logo_f';
+  static const launcher_logo_unavailable = 'launcher_logo_unavailable';
+  static const top_anime_movies = 'top_anime_movies';
+  static const top_anime_series = 'top_anime_series';
+  static const fill_mobile_screen = 'fill_mobile_screen';
+  static const fill_mobile_screen_description = 'fill_mobile_screen_description';
+  static const prefer_hindi_sources = 'prefer_hindi_sources';
+  static const prefer_hindi_sources_description = 'prefer_hindi_sources_description';
+  static const size_calculating = 'size_calculating';
+  static const download_location = 'download_location';
+  static const download_location_description = 'download_location_description';
+  static const download_choose_folder = 'download_choose_folder';
+  static const download_use_default_folder = 'download_use_default_folder';
+  static const download_location_error = 'download_location_error';
+  static const public_copy_saving = 'public_copy_saving';
+  static const public_copy_saved = 'public_copy_saved';
+  static const public_copy_failed = 'public_copy_failed';
+  static const public_copy_retry = 'public_copy_retry';
+  static const download_delete_cache_description = 'download_delete_cache_description';
+
 }

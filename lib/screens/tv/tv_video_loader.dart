@@ -123,7 +123,10 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
     }
 
     providers.add(VideoProvider.directVixSrc);
-    final orderedProviders = settings.orderStreamProviders(providers);
+    final orderedProviders = settings.orderStreamProviders(
+      providers,
+      forPlayback: true,
+    );
     if (!mounted) return;
     setState(() {
       videoProviders = orderedProviders;
@@ -393,6 +396,7 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
           seasonNumber: widget.metadata.seasonNumber!,
           episodeNumber: widget.metadata.episodeNumber!,
           scraperApiUrl: _scraperApiUrl,
+          full: settings.preferHindiSources,
         );
       },
       onResult: (index, provider, result) {
@@ -480,14 +484,24 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
     unawaited(StreamSizeEstimator.load(
       scraperApiUrl: _scraperApiUrl,
       tokens: videoSizeTokens,
+      sources: sources,
+      formats: {
+        for (final key in sources.keys)
+          key: videoFormats[key] == BetterPlayerVideoFormat.dash
+              ? 'dash'
+              : 'hls',
+      },
+      headers: {
+        for (final entry in sources.entries)
+          entry.key:
+              videoHeaders[entry.key] ??
+              VideoUtils.inferVideoHeaders(entry.value) ??
+              const {},
+      },
       cacheByToken: _streamSizeCacheByToken,
-      onEstimate: (token, bytes) {
+      onEstimate: (resolution, bytes) {
         if (!sizePickerOpen) return;
-        final next = Map<String, int?>.of(estimatedSizes.value);
-        for (final entry in videoSizeTokens.entries) {
-          if (entry.value == token) next[entry.key] = bytes;
-        }
-        estimatedSizes.value = next;
+        estimatedSizes.value = {...estimatedSizes.value, resolution: bytes};
       },
     ));
     if (!mounted) return;
@@ -497,6 +511,9 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
       providerName: providerName,
       estimatedSizesListenable: estimatedSizes,
     );
+    final selectedEstimate = quality == null
+        ? null
+        : estimatedSizes.value[quality];
     sizePickerOpen = false;
     estimatedSizes.dispose();
     if (!mounted) return;
@@ -553,6 +570,7 @@ class _TVVideoLoaderState extends State<_TVVideoLoader> {
                   '${providerName == null ? '' : ' • $providerName'}',
               mediaType: 'episode',
               quality: quality,
+              estimatedBytes: selectedEstimate,
               posterUrl: posterPath == null
                   ? null
                   : '${TMDB_BASE_IMAGE_URL}w500$posterPath',

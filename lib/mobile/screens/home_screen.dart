@@ -280,13 +280,23 @@ class _HomeScreenState extends State<HomeScreen>
   void _openList(MediaKind kind, HomeList list, String title) {
     final settings = context.read<SettingsProvider>();
     final dependencies = context.read<AppDependencyProvider>();
+    const catalog = CatalogController();
+    if (list == HomeList.animeTrending) {
+      _openCollection(catalog.animeTrendingCollection(
+        kind: kind,
+        title: title,
+        settings: settings,
+        dependencies: dependencies,
+      ));
+      return;
+    }
     final url = CatalogHomeFeedSource(
       settings: settings,
       dependencies: dependencies,
     ).urlFor(kind, list);
     if (url == null) return;
     _openCollection(
-      const CatalogController().listCollection(
+      catalog.listCollection(
         id: 'home-${kind.name}-${list.name}',
         kind: kind,
         url: url,
@@ -635,7 +645,7 @@ class _HomeHeader extends StatelessWidget {
                     fit: FlexFit.tight,
                     child: Semantics(
                       header: true,
-                      label: 'FlixQuest',
+                      label: 'FastFlix',
                       excludeSemantics: true,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -654,7 +664,7 @@ class _HomeHeader extends StatelessWidget {
                               fit: BoxFit.scaleDown,
                               alignment: AlignmentDirectional.centerStart,
                               child: Text(
-                                'FLIXQUEST',
+                                'FASTFLIX',
                                 textScaler: TextScaler.noScaling,
                                 style: TextStyle(
                                   color: palette.foreground,
@@ -793,6 +803,17 @@ List<Widget> homeRows(
         TopTenRow(
           title: titled(kind, 'top_10_movies_today', 'top_10_series_today'),
           items: topTen[kind]!,
+        ),
+    for (final kind in kinds)
+      if (feed.of(kind).animeTopTen.isNotEmpty)
+        TopTenRow(
+          title: titled(kind, 'top_anime_movies', 'top_anime_series'),
+          items: feed.of(kind).animeTopTen,
+          onSeeAll: () => onOpenList(
+            kind,
+            HomeList.animeTrending,
+            titled(kind, 'top_anime_movies', 'top_anime_series'),
+          ),
         ),
     for (final kind in kinds)
       if (trending[kind]!.isNotEmpty)

@@ -138,9 +138,12 @@ class _MovieVideoLoaderState extends State<_MovieVideoLoader> {
 
     // Keep the app's existing VixSrc implementation as an independent source,
     // even if the scraper API also exposes a provider named "vixsrc". The
-    // user's configured order from "Change Providers Order" is respected as-is.
+    // saved order is preserved within the Hindi and other groups.
     providers.add(VideoProvider.directVixSrc);
-    final orderedProviders = settings.orderStreamProviders(providers);
+    final orderedProviders = settings.orderStreamProviders(
+      providers,
+      forPlayback: true,
+    );
     if (!mounted) return;
     setState(() {
       videoProviders = orderedProviders;
@@ -413,6 +416,7 @@ class _MovieVideoLoaderState extends State<_MovieVideoLoader> {
           provider: provider,
           movieId: _metadata.movieId!,
           scraperApiUrl: _scraperApiUrl,
+          full: settings.preferHindiSources,
         );
       },
       onResult: (index, provider, result) {
@@ -500,14 +504,24 @@ class _MovieVideoLoaderState extends State<_MovieVideoLoader> {
     unawaited(StreamSizeEstimator.load(
       scraperApiUrl: _scraperApiUrl,
       tokens: videoSizeTokens,
+      sources: sources,
+      formats: {
+        for (final key in sources.keys)
+          key: videoFormats[key] == BetterPlayerVideoFormat.dash
+              ? 'dash'
+              : 'hls',
+      },
+      headers: {
+        for (final entry in sources.entries)
+          entry.key:
+              videoHeaders[entry.key] ??
+              VideoUtils.inferVideoHeaders(entry.value) ??
+              const {},
+      },
       cacheByToken: _streamSizeCacheByToken,
-      onEstimate: (token, bytes) {
+      onEstimate: (resolution, bytes) {
         if (!sizePickerOpen) return;
-        final next = Map<String, int?>.of(estimatedSizes.value);
-        for (final entry in videoSizeTokens.entries) {
-          if (entry.value == token) next[entry.key] = bytes;
-        }
-        estimatedSizes.value = next;
+        estimatedSizes.value = {...estimatedSizes.value, resolution: bytes};
       },
     ));
     if (!mounted) return;
@@ -517,6 +531,9 @@ class _MovieVideoLoaderState extends State<_MovieVideoLoader> {
       providerName: providerName,
       estimatedSizesListenable: estimatedSizes,
     );
+    final selectedEstimate = quality == null
+        ? null
+        : estimatedSizes.value[quality];
     sizePickerOpen = false;
     estimatedSizes.dispose();
     if (!mounted) return;
@@ -568,6 +585,7 @@ class _MovieVideoLoaderState extends State<_MovieVideoLoader> {
               subtitle: providerName == null ? null : 'From $providerName',
               mediaType: 'movie',
               quality: quality,
+              estimatedBytes: selectedEstimate,
               posterUrl: posterPath == null
                   ? null
                   : '${TMDB_BASE_IMAGE_URL}w500$posterPath',

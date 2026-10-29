@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="dev.beamlak.flixquest_v2">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -33,6 +34,12 @@
         android:banner="@drawable/tv_banner"
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">    
+        <!-- WorkManager keeps a completed download's public copy alive in
+             the background while Media3 remuxes it. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification" />
@@ -76,14 +83,6 @@
                  Flutter's first frame. -->
                  
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
             <intent-filter>
                 <action android:name="es.antonborri.home_widget.action.LAUNCH" />
             </intent-filter>
@@ -152,6 +151,51 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+
+        <!-- Aliases let users switch the launcher mark without changing the
+             activity that handles links, widgets, and playback. -->
+        <activity-alias android:name=".FastFlixPlayIcon"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_launcher"
+            android:label="${appLabel}"
+            android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".FastFlixWingIcon"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_fastflix_wing"
+            android:label="${appLabel}"
+            android:enabled="false" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".FastFlixFIcon"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_fastflix_f"
+            android:label="${appLabel}"
+            android:enabled="false" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <receiver
             android:name=".widgets.MovieOfDayWidgetProvider"

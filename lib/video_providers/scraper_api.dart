@@ -196,8 +196,8 @@ class ScraperApi {
   }
 
   /// Loads [path], asking for every server when [full] is set. A server with
-  /// full collection turned off refuses such a request outright, so it is
-  /// retried for the first working server instead.
+  /// full collection turned off (or a failed full request) falls back to the
+  /// ordinary first-working-server request.
   Future<ProviderLoadResult> _loadStream(
     String path,
     Map<String, String> queryParameters, {
@@ -206,21 +206,17 @@ class ScraperApi {
     if (full) {
       final result =
           await _fetchStream(path, {...queryParameters, 'full': 'true'});
-      if (!_isFullCollectionDisabled(result)) return result;
+      if (result.success && result.videoLinks?.isNotEmpty == true)
+        return result;
       if (kDebugMode) {
         debugPrint(
-          '[ScraperApi] Full collection is disabled for $path '
+          '[ScraperApi] Full collection unavailable for $path '
           '(provider=${queryParameters['provider']}); retrying without full',
         );
       }
     }
     return await _fetchStream(path, queryParameters);
   }
-
-  static bool _isFullCollectionDisabled(ProviderLoadResult result) =>
-      !result.success &&
-      (result.errorMessage?.toLowerCase().contains('full stream collection') ??
-          false);
 
   Future<ProviderLoadResult> _fetchStream(
     String path,
@@ -259,6 +255,11 @@ class ScraperApi {
               url: url,
               quality: link['quality']?.toString() ?? 'unknown quality',
               server: link['server']?.toString(),
+              language:
+                  (link['language'] ??
+                          link['audioLanguage'] ??
+                          link['hlsAudioLanguage'])
+                      ?.toString(),
               isM3U8: link['isM3U8'] == true,
               isDash: link['isDASH'] == true,
               headers: linkHeaders,

@@ -368,7 +368,7 @@ class _TvLandingIntro extends StatelessWidget {
         ),
         SizedBox(height: compact ? 22 : 30),
         Text(
-          'FlixQuest TV',
+          'FastFlix TV',
           style: TextStyle(
             color: palette.foreground,
             fontFamily: 'FigtreeBold',

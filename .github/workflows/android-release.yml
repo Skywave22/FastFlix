@@ -60,6 +60,7 @@ jobs:
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          FIREBASE_ANDROID_CONFIG: ${{ secrets.FIREBASE_ANDROID_CONFIG }}
         run: python3 .github/scripts/select_android_build.py
 
       - name: Prepare release configuration and signing
@@ -72,13 +73,21 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: python3 .github/scripts/prepare_android_release.py
 
+      - name: Validate Firebase registration for the new package
+        if: ${{ steps.build_mode.outputs.mode == 'release' }}
+        env:
+          FIREBASE_ANDROID_CONFIG: ${{ secrets.FIREBASE_ANDROID_CONFIG }}
+        run: python3 .github/scripts/prepare_firebase_android.py release
+
       - name: Prepare preview configuration
         if: ${{ steps.build_mode.outputs.mode == 'preview' }}
         run: |
           cp .env.example .env
+          python3 .github/scripts/prepare_firebase_android.py preview
           {
             echo '### Debug preview APK'
             echo 'This artifact uses example configuration and a temporary debug signing key.'
+            echo 'Firebase options are deliberately invalid: Firebase services will not work.'
             echo 'Online features may not work. It cannot update a differently signed installation.'
             echo 'It is not suitable for a production release.'
           } >> "$GITHUB_STEP_SUMMARY"
@@ -116,17 +125,31 @@ jobs:
 
       - name: Run feature tests
         run: |
+          set +e
           flutter test --no-pub \
             test/anime_genre_test.dart \
+            test/trending_anime_test.dart \
+            test/home_screen_test.dart \
+            test/fastflix_preferences_test.dart \
+            test/hindi_source_priority_test.dart \
+            test/manifest_size_estimator_test.dart \
+            test/offline_download_test.dart \
+            test/download_location_test.dart \
             test/download_settings_test.dart \
-            test/player_audio_choices_test.dart
+            test/player_audio_choices_test.dart 2>&1 | tee "$RUNNER_TEMP/flutter-test.log"
+          test_status=${PIPESTATUS[0]}
+          set -e
+          if (( test_status != 0 )); then
+            python3 .github/scripts/report_android_failure.py "$RUNNER_TEMP/flutter-test.log"
+            exit "$test_status"
+          fi
 
       - name: Build universal APK
         if: ${{ steps.build_mode.outputs.mode == 'release' }}
         run: |
           flutter build apk --release --flavor prod --no-pub
           mkdir -p release-apks
-          cp build/app/outputs/flutter-apk/app-prod-release.apk release-apks/FlixQuest-universal.apk
+          cp build/app/outputs/flutter-apk/app-prod-release.apk release-apks/FastFlix-universal.apk
 
       - name: Build debug preview APK
         if: ${{ steps.build_mode.outputs.mode == 'preview' }}
@@ -140,22 +163,25 @@ jobs:
             exit "$build_status"
           fi
           mkdir -p release-apks
-          cp build/app/outputs/flutter-apk/app-prod-debug.apk release-apks/FlixQuest-preview-debug.apk
+          cp build/app/outputs/flutter-apk/app-prod-debug.apk release-apks/FastFlix-preview-debug.apk
           cat > release-apks/README-preview.txt <<'EOF'
           This is a debug preview, not a production release.
           It uses the example configuration, including an emulator-only Laravel URL
           and an empty TMDB key. Online features may not work without real settings.
+          Its deliberately invalid Firebase options do not register the app; Firebase
+          services cannot work until the new package is registered in Firebase.
           It is signed with a temporary debug key and cannot update an installation
           signed by a different key. Do not distribute it as a production release.
           EOF
 
-      - name: Run Android download settings tests
+      - name: Run Android download unit tests
         env:
           BUILD_MODE: ${{ steps.build_mode.outputs.mode }}
         run: |
           set +e
           ./android/gradlew -p android :app:testProdDebugUnitTest \
-            --tests 'dev.beamlak.flixquest_v2.downloads.DownloadSettingsTest' 2>&1 | tee "$RUNNER_TEMP/android-test.log"
+            --tests 'dev.beamlak.flixquest_v2.downloads.DownloadSettingsTest' \
+            --tests 'dev.beamlak.flixquest_v2.downloads.PublicDownloadDestinationTest' 2>&1 | tee "$RUNNER_TEMP/android-test.log"
           test_status=${PIPESTATUS[0]}
           set -e
           if (( test_status != 0 )); then
@@ -170,7 +196,7 @@ jobs:
         run: |
           flutter build apk --release --flavor prod --split-per-abi --no-pub
           for abi in armeabi-v7a arm64-v8a x86_64; do
-            cp "build/app/outputs/flutter-apk/app-${abi}-prod-release.apk" "release-apks/FlixQuest-${abi}.apk"
+            cp "build/app/outputs/flutter-apk/app-${abi}-prod-release.apk" "release-apks/FastFlix-${abi}.apk"
           done
 
       - name: Verify signatures and generate checksums
@@ -183,7 +209,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.build_mode.outputs.mode == 'release' && 'FlixQuest-android-apks' || 'FlixQuest-preview-debug-apk' }}
+          name: ${{ steps.build_mode.outputs.mode == 'release' && 'FastFlix-android-apks' || 'FastFlix-preview-debug-apk' }}
           path: FastFlix/release-apks/
           if-no-files-found: error
           compression-level: 0
@@ -212,4 +238,4 @@ jobs:
       - name: Remove temporary configuration and signing material
         if: ${{ always() }}
         working-directory: ${{ github.workspace }}
-        run: rm -f FastFlix/.env FastFlix/android/key.properties "$RUNNER_TEMP/flixquest-release-keystore.jks"
+        run: rm -f FastFlix/.env FastFlix/android/key.properties "$RUNNER_TEMP/flixquest-release-keystore.jks" FastFlix/android/app/src/prod/debug/google-services.json FastFlix/android/app/src/prod/release/google-services.json

@@ -105,10 +105,16 @@ class PosterRow extends StatelessWidget {
 
 /// Today's ten, each poster with its rank drawn tall beside it.
 class TopTenRow extends StatelessWidget {
-  const TopTenRow({required this.title, required this.items, super.key});
+  const TopTenRow({
+    required this.title,
+    required this.items,
+    this.onSeeAll,
+    super.key,
+  });
 
   final String title;
   final List<MediaItem> items;
+  final VoidCallback? onSeeAll;
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +125,7 @@ class TopTenRow extends StatelessWidget {
       title: title,
       height: height,
       itemCount: top.length,
+      onSeeAll: onSeeAll,
       spacing: 4,
       // A rank tucks under its poster's left edge, so each pair is laid
       // out left to right in every language; the row still runs the

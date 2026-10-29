@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/fastflix_logo.dart';
 import '../functions/subtitle_style.dart';
 import '../models/app_mode.dart';
 import '../models/default_home.dart';
@@ -6,6 +8,7 @@ import '../preferences/setting_preferences.dart';
 import '../services/analytics_service.dart';
 import '../services/tmdb_connectivity.dart';
 import '../video_providers/names.dart';
+import '../video_providers/language_priority.dart';
 
 class SettingsProvider with ChangeNotifier {
   SettingsProvider() : _tmdbConnectivity = TmdbConnectivity.instance {
@@ -29,6 +32,37 @@ class SettingsProvider with ChangeNotifier {
   }
 
   final SettingsPreferences _settingsPreferences = SettingsPreferences();
+
+  FastFlixLogo _fastFlixLogo = FastFlixLogo.play;
+  FastFlixLogo get fastFlixLogo => _fastFlixLogo;
+
+  Future<void> getFastFlixLogo() async {
+    _fastFlixLogo = FastFlixLogo.fromId(
+      await _settingsPreferences.getFastFlixLogo(),
+    );
+    notifyListeners();
+  }
+
+  /// Changes the in-app design and, where supported, the Android launcher icon.
+  /// Returns false if Android could not update its launcher component.
+  Future<bool> setFastFlixLogo(FastFlixLogo logo) async {
+    var launcherUpdated = true;
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        await const MethodChannel(
+          'io.github.skywave22.fastflix/branding',
+        ).invokeMethod<void>('setLogo', {'logo': logo.id});
+      } on PlatformException {
+        launcherUpdated = false;
+      } on MissingPluginException {
+        launcherUpdated = false;
+      }
+    }
+    await _settingsPreferences.setFastFlixLogo(logo.id);
+    _fastFlixLogo = logo;
+    notifyListeners();
+    return launcherUpdated;
+  }
 
   AppMode _appMode = AppMode.automatic;
   AppMode get appMode => _appMode;
@@ -91,6 +125,38 @@ class SettingsProvider with ChangeNotifier {
 
   bool _defaultViewMode = true;
   bool get defaultViewMode => _defaultViewMode;
+
+  bool _preferHindiSources = true;
+  bool get preferHindiSources => _preferHindiSources;
+
+  Future<void> getPreferHindiSources() async {
+    _preferHindiSources = await _settingsPreferences.getPreferHindiSources();
+    notifyListeners();
+  }
+
+  set preferHindiSources(bool value) {
+    if (_preferHindiSources == value) return;
+    _preferHindiSources = value;
+    _settingsPreferences.setPreferHindiSources(value);
+    _trackSetting('Prefer Hindi Sources', value);
+    notifyListeners();
+  }
+
+  bool _screenFill = false;
+  bool get screenFill => _screenFill;
+
+  Future<void> getScreenFill() async {
+    _screenFill = await _settingsPreferences.getScreenFill();
+    notifyListeners();
+  }
+
+  set screenFill(bool value) {
+    if (_screenFill == value) return;
+    _screenFill = value;
+    _settingsPreferences.setScreenFill(value);
+    _trackSetting('Fill Mobile Screen', value);
+    notifyListeners();
+  }
 
   AnalyticsService? _analytics;
   bool _isHydrating = true;
@@ -318,8 +384,8 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> getVideoResolution() async {
-    defaultVideoResolution =
-        await _settingsPreferences.getDefaultVideoQuality();
+    defaultVideoResolution = await _settingsPreferences
+        .getDefaultVideoQuality();
   }
 
   set defaultVideoResolution(int value) {
@@ -429,12 +495,18 @@ class SettingsProvider with ChangeNotifier {
   }
 
   List<VideoProvider> orderStreamProviders(
-    Iterable<VideoProvider> availableProviders,
-  ) {
-    return VideoProviderOrder.apply(
+    Iterable<VideoProvider> availableProviders, {
+    bool forPlayback = false,
+  }) {
+    final ordered = VideoProviderOrder.apply(
       availableProviders,
       _streamProviderOrder,
     );
+    // Keep the order editor faithful to the saved order; apply the language
+    // preference only when presenting/trying sources for playback or download.
+    return forPlayback && _preferHindiSources
+        ? LanguagePriority.hindiFirst(ordered, (p) => p.advertisesHindi)
+        : ordered;
   }
 
   void setStreamProviderOrder(Iterable<VideoProvider> providers) {
@@ -487,8 +559,8 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> getEnableNextEpisodeButton() async {
-    enableNextEpisodeButton =
-        await _settingsPreferences.getEnableNextEpisodeButton();
+    enableNextEpisodeButton = await _settingsPreferences
+        .getEnableNextEpisodeButton();
   }
 
   set enableNextEpisodeButton(bool value) {
@@ -499,8 +571,8 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> getIntroDbSettings() async {
-    enableIntroDbSkipButtons =
-        await _settingsPreferences.getEnableIntroDbSkipButtons();
+    enableIntroDbSkipButtons = await _settingsPreferences
+        .getEnableIntroDbSkipButtons();
   }
 
   set enableIntroDbSkipButtons(bool value) {
@@ -511,8 +583,8 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> getPlayerAmbientGlowEnabled() async {
-    playerAmbientGlowEnabled =
-        await _settingsPreferences.getPlayerAmbientGlowEnabled();
+    playerAmbientGlowEnabled = await _settingsPreferences
+        .getPlayerAmbientGlowEnabled();
   }
 
   set playerAmbientGlowEnabled(bool value) {

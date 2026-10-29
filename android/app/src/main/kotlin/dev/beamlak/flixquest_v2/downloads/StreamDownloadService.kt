@@ -73,7 +73,7 @@ class StreamDownloadService : DownloadService(
             .setContentTitle(heading)
             .setContentText(details)
             .setStyle(NotificationCompat.BigTextStyle().bigText(details))
-            .setSubText("FlixQuest downloads")
+            .setSubText("FastFlix downloads")
             .setContentIntent(pendingIntent)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -140,10 +140,13 @@ class StreamDownloadService : DownloadService(
     }
 
     private fun totalBytes(download: Download): Pair<Long, String>? {
-        if (download.contentLength > 0) return download.contentLength to ""
-        val percent = download.percentDownloaded
-        if (download.bytesDownloaded <= 0 || percent.isNaN() || percent <= 0) return null
-        return ((download.bytesDownloaded * 100) / percent).toLong() to "~"
+        if (download.contentLength > 0 && download.contentLength >= download.bytesDownloaded) {
+            return download.contentLength to ""
+        }
+        val estimate = StreamDownloadStore.requestMetadata(download.request).optLong("estimatedBytes", -1)
+        if (estimate > download.bytesDownloaded) return estimate to "~"
+        // Adaptive percentages may represent segment counts rather than bytes.
+        return null
     }
 
     private fun updateTransferRate(downloads: List<Download>): Long {

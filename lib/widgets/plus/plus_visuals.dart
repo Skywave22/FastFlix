@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// FlixQuest Plus's own look. Like artwork, it keeps fixed colours in every
+/// FastFlix Plus's own look. Like artwork, it keeps fixed colours in every
 /// theme (a night sky with a warm aurora), so it never borrows the app's
 /// accent and reads the same on Dark, AMOLED, Light and the TV.
 abstract final class PlusColors {
@@ -215,7 +215,7 @@ class _PlusSheenState extends State<PlusSheen>
       );
 }
 
-/// "FlixQuest PLUS", the PLUS in gold foil.
+/// "FastFlix PLUS", the PLUS in gold foil.
 class PlusWordmark extends StatelessWidget {
   const PlusWordmark({this.size = 30, this.showName = true, super.key});
 
@@ -236,7 +236,7 @@ class PlusWordmark extends StatelessWidget {
             children: <Widget>[
               if (showName) ...<Widget>[
                 Text(
-                  'FlixQuest',
+                  'FastFlix',
                   style: TextStyle(
                     fontFamily: 'FigtreeBold',
                     fontSize: size * .62,
@@ -265,7 +265,7 @@ class PlusWordmark extends StatelessWidget {
       );
 }
 
-/// The FlixQuest outline mark with a plus beside its wedge: Plus's own
+/// The FastFlix outline mark with a plus beside its wedge: Plus's own
 /// symbol. Takes the surrounding icon colour and size unless given them.
 class PlusMark extends StatelessWidget {
   const PlusMark({this.size, this.color, super.key});

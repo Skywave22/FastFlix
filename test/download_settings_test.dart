@@ -92,8 +92,7 @@ void main() {
         });
 
     expect(download().estimatedTimeRemaining, const Duration(seconds: 60));
-    expect(download(length: -1, progress: 25).estimatedTimeRemaining,
-        const Duration(seconds: 30));
+    expect(download(length: -1, progress: 25).estimatedTimeRemaining, isNull);
     expect(download(state: 'queued').estimatedTimeRemaining, isNull);
     expect(download(rate: 0).estimatedTimeRemaining, isNull);
     expect(download(rate: double.nan).estimatedTimeRemaining, isNull);

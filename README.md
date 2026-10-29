@@ -62,6 +62,10 @@
 
 - **Background Downloads**: Download movies and TV episodes from HLS/DASH sources with background management, progress notifications and estimated time remaining. New direct-file downloads are not currently supported.
 - **Advanced download settings**: Choose adaptive-stream segment workers, simultaneous downloads, retries and an unmetered-network requirement. HLS/DASH segments can download in parallel; actual speed depends on the source and connection.
+- **Download location**: New downloads keep an app-private Media3 cache for offline playback and try to create a separate playable MP4 in `Downloads/FastFlix/Movies` or `Downloads/FastFlix/Series/<series name>`. In Downloads → settings, choose another folder (including an SD card) or restore the default. The selection applies to new jobs; retry a failed copy to use the current folder. The private cache and public copy consume additional space. Some streams cannot be remuxed; a failed copy is reported without deleting the offline download. Deleting an offline download does not delete its public copy.
+- **Size estimates**: Qualities show approximate sizes when the provider or stream manifest exposes enough information. If not, the size is unknown; actual video/audio and exported sizes can differ. In-progress totals no longer extrapolate from segment-count percentages.
+- **Player preferences**: Optionally fill the mobile screen (edges can be cropped) and prioritize sources explicitly labeled Hindi. Other sources remain available and metadata may be incomplete.
+- **Trending anime**: Home ranks Japanese-language animation found in the first five pages of weekly TMDB trends. Fewer than ten may be shown; See all pages through the matching weekly-trending movie or series feed, skipping pages without anime.
 - **Aspect Ratio Normalization**: Built-in video exporter with square-pixel aspect ratio normalization.
 - **Subtitle Bundling**: Automatically export and bundle subtitles with downloaded videos for offline viewing.
 - **Offline Player**: Dedicated offline library and media player for downloaded files.
@@ -285,9 +289,11 @@ universal APK, three ABI-specific APKs, and `SHA256SUMS.txt`.
 For an artifact-only build without all the secrets, it instead uploads a
 **debug preview APK** with `.env.example` and a temporary debug signing key.
 The example has an emulator-only backend URL and no TMDB key, so online features
-may not work. The APK cannot update an installation signed by a different key
-and must not be distributed as a production release. Tag and manual release
-builds never use this fallback.
+may not work. The preview also contains deliberately invalid, debug-only Firebase
+options: it is not registered with Firebase and Firebase services will not work.
+The APK cannot update an installation signed by a different key and must not be
+distributed as a production release. Tag and manual release builds never use
+this fallback.
 
 To build and publish production APKs, configure these repository secrets under
 **Settings → Secrets and variables → Actions**:
@@ -299,6 +305,7 @@ To build and publish production APKs, configure these repository secrets under
 | `ANDROID_KEY_ALIAS` | The signing key's alias. |
 | `ANDROID_KEY_PASSWORD` | The signing key's password. |
 | `FLIXQUEST_ENV` | Complete multi-line release `.env` contents, based on `.env.example`. |
+| `FIREBASE_ANDROID_CONFIG` | Complete `google-services.json` downloaded after registering `io.github.skywave22.fastflix` as an Android app in the correct Firebase project. |
 
 `FLIXQUEST_ENV` must contain non-empty `TMDB_API_KEY`, `FLIXQUEST_API_URL`, and
 `LARAVEL_API_URL` values, plus a `MIXPANEL_API_KEY` entry (which may be empty).
@@ -306,10 +313,21 @@ Use literal values instead of `.env` variable interpolation for the required
 entries. Use real, device-reachable HTTP(S) base URLs: the emulator-only `10.0.2.2`
 example is rejected. Add the other public client settings from `.env.example` as
 needed. **Everything in `.env` is bundled into the APK and can be extracted**;
-never put server-side credentials or other private secrets there. The workflow
-uses the tracked `android/app/google-services.json` for Firebase. The release
-keystore and its passwords remain private; use the same signing key as existing
-installations if the APK should update them.
+never put server-side credentials or other private secrets there. The tracked
+`android/app/google-services.json` registers the old package only and cannot be
+used for this application ID. The workflow validates `FIREBASE_ANDROID_CONFIG`
+and writes it to a release-only source set; editing the old package name in JSON
+is not a Firebase registration. The new application ID installs separately from
+the old app even if signed with the same key. The release keystore and its
+passwords remain private and must be retained for future FastFlix updates.
+Google Sign-In, push notifications, Remote Config, app links and billing may
+also need the new package and signing fingerprint registered in their respective
+services before they work in production.
+
+For a local debug-only preview, run `python3 .github/scripts/prepare_firebase_android.py preview`
+after copying `.env.example` to `.env`. This creates invalid Firebase options in
+the ignored `prod/debug` source set only. A local production build must instead
+use a real Firebase configuration for the new package and proper release signing.
 
 To publish, push a tag beginning with `v` that points to the commit to release.
 The workflow creates a published GitHub release with generated notes if one

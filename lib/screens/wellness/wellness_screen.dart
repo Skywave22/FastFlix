@@ -942,7 +942,7 @@ class _ShareRecapCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'FLIXQUEST',
+                      'FASTFLIX',
                       style: TextStyle(
                         color: foreground,
                         fontFamily: 'FigtreeSB',

@@ -171,6 +171,18 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           showBadges: false,
         ),
         TvTopTenRow(
+          title: tr('top_anime_movies'),
+          scopeId: 'home-top-anime-movies',
+          items: data.topAnimeMovies,
+          seeAll: _seeAllAnime(TvMediaKind.movie),
+        ),
+        TvTopTenRow(
+          title: tr('top_anime_series'),
+          scopeId: 'home-top-anime-series',
+          items: data.topAnimeSeries,
+          seeAll: _seeAllAnime(TvMediaKind.series),
+        ),
+        TvTopTenRow(
           title: tr('top_10_movies_today'),
           scopeId: 'home-top-movies',
           items: data.topMovies,
@@ -247,6 +259,27 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           title: title,
           settings: context.read<SettingsProvider>(),
           dependencies: context.read<AppDependencyProvider>(),
+        ),
+      ),
+    );
+  }
+
+  TvRowSeeAll? _seeAllAnime(TvMediaKind kind) {
+    final open = widget.onOpenCollection;
+    if (open == null) return null;
+    final settings = context.read<SettingsProvider>();
+    final dependencies = context.read<AppDependencyProvider>();
+    final title = tr(
+      kind == TvMediaKind.movie ? 'top_anime_movies' : 'top_anime_series',
+    );
+    return TvRowSeeAll(
+      label: tr('see_all'),
+      onActivate: () => open(
+        const TvCatalogController().animeTrendingCollection(
+          kind: kind,
+          title: title,
+          settings: settings,
+          dependencies: dependencies,
         ),
       ),
     );

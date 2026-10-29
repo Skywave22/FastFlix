@@ -18,6 +18,7 @@ class MainActivity: FlutterActivity() {
     private var downloadsBridge: StreamDownloadsBridge? = null
     private var linkBridge: MediaLinkBridge? = null
     private var streamingDndBridge: StreamingDndBridge? = null
+    private var launcherIconBridge: LauncherIconBridge? = null
 
     // Starting an activity of our own (a file picker or external player) also
     // reports the user as leaving, which would send a playing video into picture in picture.
@@ -26,6 +27,7 @@ class MainActivity: FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         streamingDndBridge = StreamingDndBridge(this, flutterEngine.dartExecutor.binaryMessenger)
+        launcherIconBridge = LauncherIconBridge(this, flutterEngine.dartExecutor.binaryMessenger)
 
         val bridge = StreamDownloadsBridge(
             this,
@@ -63,6 +65,10 @@ class MainActivity: FlutterActivity() {
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        downloadsBridge?.dispose()
+        downloadsBridge = null
+        launcherIconBridge?.dispose()
+        launcherIconBridge = null
         streamingDndBridge?.dispose()
         streamingDndBridge = null
         linkBridge?.dispose()
@@ -98,6 +104,11 @@ class MainActivity: FlutterActivity() {
     override fun onPause() {
         streamingDndBridge?.setForeground(false)
         super.onPause()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (downloadsBridge?.onRequestPermissionsResult(requestCode) == true) return
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

@@ -1,7 +1,10 @@
 package dev.beamlak.flixquest_v2.downloads
 
+import android.Manifest
 import android.app.Activity
 import android.content.ClipData
+import android.content.pm.PackageManager
+import android.os.Build
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
@@ -26,12 +29,14 @@ class StreamDownloadsBridge(
     DownloadManager.Listener {
     private val appContext = activity.applicationContext
     val store: StreamDownloadStore = StreamDownloadStore.get(appContext)
-    private val exporter = StreamDownloadExporter(appContext, store)
+    private val exporter = store.exporter
     private val fileExecutor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private var eventSink: EventChannel.EventSink? = null
     private var polling = false
     private var pendingSave: PendingSave? = null
+    private var pendingFolder: MethodChannel.Result? = null
+    private var pendingStoragePermission: Pair<MethodCall, MethodChannel.Result>? = null
     private val pendingEnqueues = mutableMapOf<String, Any>()
 
     init {
@@ -45,6 +50,18 @@ class StreamDownloadsBridge(
         when (call.method) {
             "getDownloads" -> runResult(result) { downloadMaps() }
             "getDownloadSettings" -> runResult(result) { store.getDownloadSettings() }
+            "getDownloadLocation" -> runResult(result) { store.publicSettings.locationMap() }
+            "chooseDownloadLocation" -> chooseFolder(result)
+            "resetDownloadLocation" -> runResult(result) {
+                // Keep old persisted grants for already queued downloads; new
+                // downloads snapshot the default location from this point on.
+                store.publicSettings.setTreeUri("")
+                store.publicSettings.locationMap()
+            }
+            "retryPublicCopy" -> withId(call, result) { id ->
+                require(store.getDownload(id)?.state == Download.STATE_COMPLETED) { "The download must finish first." }
+                PublicDownloadWorker.schedule(appContext, id, retry = true)
+            }
             "setDownloadSettings" -> {
                 val arguments = call.arguments as? Map<*, *>
                 if (arguments == null) {
@@ -102,6 +119,7 @@ class StreamDownloadsBridge(
             "saveCopy" -> exportForDocument(call, result)
             "remove" -> withId(call, result) { id ->
                 pendingEnqueues.remove(id)
+                PublicDownloadWorker.cancel(appContext, id)
                 exporter.deleteExport(id)
                 store.deleteSubtitle(id)
                 DownloadService.sendRemoveDownload(
@@ -115,7 +133,44 @@ class StreamDownloadsBridge(
         }
     }
 
+    private fun chooseFolder(result: MethodChannel.Result) {
+        if (pendingFolder != null) {
+            result.error("FOLDER_PICKER_BUSY", "A folder picker is already open.", null)
+            return
+        }
+        pendingFolder = result
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+        }
+        try {
+            activity.startActivityForResult(intent, CHOOSE_FOLDER_REQUEST)
+        } catch (error: Exception) {
+            pendingFolder = null
+            result.error("FILE_PICKER_UNAVAILABLE", error.message, null)
+        }
+    }
+
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (requestCode == CHOOSE_FOLDER_REQUEST) {
+            val pending = pendingFolder ?: return true
+            pendingFolder = null
+            val uri = data?.data
+            if (resultCode != Activity.RESULT_OK || uri == null) {
+                pending.success(null)
+                return true
+            }
+            try {
+                val flags = (data?.flags ?: 0) and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                check(flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION != 0) { "The chosen folder is not writable." }
+                appContext.contentResolver.takePersistableUriPermission(uri, flags)
+                store.publicSettings.setTreeUri(uri.toString())
+                pending.success(store.publicSettings.locationMap())
+            } catch (error: Exception) {
+                pending.error("FOLDER_PERMISSION_FAILED", error.message, null)
+            }
+            return true
+        }
         if (requestCode != SAVE_COPY_REQUEST) return false
         val pending = pendingSave ?: return true
         pendingSave = null
@@ -222,7 +277,29 @@ class StreamDownloadsBridge(
         }
     }
 
-    private fun enqueue(call: MethodCall, result: MethodChannel.Result) {
+    fun onRequestPermissionsResult(requestCode: Int): Boolean {
+        if (requestCode != LEGACY_STORAGE_REQUEST) return false
+        val pending = pendingStoragePermission ?: return true
+        pendingStoragePermission = null
+        // A denied permission doesn't prevent private offline playback. The
+        // public copy will report the failure and can be retried after the
+        // user grants access or selects a folder.
+        enqueue(pending.first, pending.second, permissionChecked = true)
+        return true
+    }
+
+    private fun enqueue(call: MethodCall, result: MethodChannel.Result, permissionChecked: Boolean = false) {
+        if (!permissionChecked && Build.VERSION.SDK_INT in Build.VERSION_CODES.M..Build.VERSION_CODES.P &&
+            store.publicSettings.treeUri().isEmpty() &&
+            activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            if (pendingStoragePermission != null) {
+                result.error("STORAGE_PERMISSION_PENDING", "Storage access is already being requested.", null)
+                return
+            }
+            pendingStoragePermission = call to result
+            activity.requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), LEGACY_STORAGE_REQUEST)
+            return
+        }
         val arguments = call.arguments as? Map<*, *> ?: run {
             result.error("INVALID_ARGUMENTS", "Download arguments are required.", null)
             return
@@ -343,6 +420,14 @@ class StreamDownloadsBridge(
         }
     }
 
+    fun dispose() {
+        onCancel(null)
+        store.downloadManager.removeListener(this)
+        fileExecutor.shutdown()
+        pendingFolder?.error("ACTIVITY_CLOSED", "The folder picker was closed.", null)
+        pendingFolder = null
+    }
+
     override fun onCancel(arguments: Any?) {
         eventSink = null
         polling = false
@@ -382,6 +467,8 @@ class StreamDownloadsBridge(
         private const val EVENT_CHANNEL = "dev.beamlak.flixquest/stream_download_events"
         private const val USER_PAUSED = 1
         private const val SAVE_COPY_REQUEST = 4_303
+        private const val CHOOSE_FOLDER_REQUEST = 4_304
+        private const val LEGACY_STORAGE_REQUEST = 4_305
     }
 
     private data class PendingSave(

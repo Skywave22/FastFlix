@@ -1,4 +1,5 @@
 import 'package:flixquest/video_providers/common.dart';
+import 'package:flixquest/video_providers/language_priority.dart';
 import 'package:better_player_plus/better_player.dart';
 
 class VideoUtils {
@@ -61,9 +62,16 @@ class VideoUtils {
   /// source is larger, the smallest source is used.
   static MapEntry<String, T>? preferredVideoSource<T>(
     Map<String, T> sources,
-    int preferredHeight,
-  ) {
+    int preferredHeight, {
+    bool preferHindi = false,
+  }) {
     if (sources.isEmpty) return null;
+    if (preferHindi) {
+      final hindi = Map<String, T>.fromEntries(
+        sources.entries.where((entry) => LanguagePriority.isHindi(entry.key)),
+      );
+      if (hindi.isNotEmpty) sources = hindi;
+    }
 
     if (preferredHeight == 0) {
       for (final entry in sources.entries) {
@@ -190,6 +198,16 @@ class VideoUtils {
               : qualityCounts[quality]! > 1 && server?.isNotEmpty == true
                   ? '$quality · $server'
                   : quality;
+          // Expose explicit Hindi hints even for a unique quality so the
+          // automatic source selector can prefer that server without losing
+          // the other servers from the manual menu.
+          if (!LanguagePriority.isHindi(key)) {
+            if (LanguagePriority.isHindi(server)) {
+              key = '$key · $server';
+            } else if (LanguagePriority.isHindi(video.language)) {
+              key = '$key · Hindi';
+            }
+          }
           final baseKey = key;
           var occurrence = 1;
           while (!usedKeys.add(key)) {

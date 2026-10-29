@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -16,6 +15,7 @@ import '../models/provider_load_state.dart';
 import '../provider/app_dependency_provider.dart';
 import '../provider/settings_provider.dart';
 import 'provider_loading_widget.dart';
+import 'app_logo.dart';
 
 /// Landscape screens at least this wide (TV at 960, landscape phones and
 /// tablets) put the title over full-bleed artwork instead of beneath it.
@@ -139,8 +139,8 @@ class PlaybackLoadingScreen extends StatelessWidget {
                     end: wide ? side : AppSpace.lg,
                     top: AppSpace.md,
                   ),
-                  child: SvgPicture.asset(
-                    'assets/images/fq_mark.svg',
+                  child: const AppLogo(
+                    fallbackAsset: 'assets/images/fq_mark.svg',
                     width: 25,
                     height: 31,
                   ),

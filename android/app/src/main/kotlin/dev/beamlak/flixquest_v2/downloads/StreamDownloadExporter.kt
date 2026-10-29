@@ -21,6 +21,7 @@ import androidx.media3.transformer.InAppMp4Muxer
 import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.CancellationException
 
 @UnstableApi
@@ -37,39 +38,48 @@ class StreamDownloadExporter(
     private var activeTransformer: Transformer? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val callbacks = mutableListOf<(Result<File>) -> Unit>()
+    private val waiting = ArrayDeque<PendingExport>()
 
+    /** Calls are made on the main looper. Serializing remuxes avoids two
+     * downloads or a manual export competing for the same private cache. */
     fun export(downloadId: String, callback: (Result<File>) -> Unit) {
+        if (activeExportId == downloadId) {
+            callbacks.add(callback)
+            return
+        }
+        waiting.firstOrNull { it.id == downloadId }?.let {
+            it.callbacks.add(callback)
+            return
+        }
+        waiting.addLast(PendingExport(downloadId, mutableListOf(callback)))
+        startNext()
+    }
+
+    private fun startNext() {
+        if (activeExportId != null || waiting.isEmpty()) return
+        val pending = waiting.removeFirst()
+        val downloadId = pending.id
+        callbacks.addAll(pending.callbacks)
+        activeExportId = downloadId
         val download = store.getDownload(downloadId)
         if (download == null || download.state != Download.STATE_COMPLETED) {
-            callback(Result.failure(IllegalStateException("The download must finish before it can be exported.")))
+            finish(Result.failure(IllegalStateException("The download must finish before it can be exported.")))
             return
         }
 
         val output = outputFile(download)
         if (output.isFile && output.length() > 0) {
-            callback(Result.success(output))
-            return
-        }
-        if (activeExportId == downloadId) {
-            callbacks.add(callback)
-            return
-        }
-        if (activeExportId != null) {
-            callback(Result.failure(IllegalStateException("Another video is already being prepared.")))
+            finish(Result.success(output))
             return
         }
         if (!exportDirectory.exists() && !exportDirectory.mkdirs()) {
-            callback(Result.failure(IllegalStateException("Could not create the video export directory.")))
+            finish(Result.failure(IllegalStateException("Could not create the video export directory.")))
             return
         }
-
         if (!hasSpaceFor(download)) {
-            callback(Result.failure(notEnoughStorage(download, cause = null)))
+            finish(Result.failure(notEnoughStorage(download, cause = null)))
             return
         }
-
-        activeExportId = downloadId
-        callbacks.add(callback)
         startTransformer(download, output, inAppMuxer = false)
     }
 
@@ -80,6 +90,8 @@ class StreamDownloadExporter(
      */
     private fun startTransformer(download: Download, output: File, inAppMuxer: Boolean) {
         val downloadId = download.request.id
+        val temporary = File(output.absolutePath + ".partial")
+        temporary.delete()
         val mediaSourceFactory = DefaultMediaSourceFactory(store.readOnlyCacheFactory(download.request))
         val assetLoaderFactory = DefaultAssetLoaderFactory(
             appContext,
@@ -90,7 +102,12 @@ class StreamDownloadExporter(
         )
         val listener = object : Transformer.Listener {
             override fun onCompleted(composition: Composition, exportResult: ExportResult) {
-                finish(Result.success(output))
+                if (temporary.isFile && temporary.length() > 0 && temporary.renameTo(output)) {
+                    finish(Result.success(output))
+                } else {
+                    temporary.delete()
+                    finish(Result.failure(IOException("Could not finish the video export.")))
+                }
             }
 
             override fun onError(
@@ -98,7 +115,7 @@ class StreamDownloadExporter(
                 exportResult: ExportResult,
                 exportException: ExportException,
             ) {
-                output.delete()
+                temporary.delete()
                 Log.e(
                     TAG,
                     "Export of $downloadId failed with the " +
@@ -126,20 +143,28 @@ class StreamDownloadExporter(
                 .apply { if (inAppMuxer) setMuxerFactory(InAppMp4Muxer.Factory()) }
                 .addListener(listener)
                 .build()
-                .also { it.start(download.request.toMediaItem(), output.absolutePath) }
+                .also { it.start(download.request.toMediaItem(), temporary.absolutePath) }
         } catch (error: Exception) {
-            output.delete()
+            temporary.delete()
             finish(Result.failure(describeFailure(download, error)))
         }
     }
 
     fun deleteExport(downloadId: String) {
+        val cancelled = waiting.filter { it.id == downloadId }
+        waiting.removeAll(cancelled.toSet())
+        cancelled.flatMap { it.callbacks }.forEach {
+            it(Result.failure(CancellationException("Video export was cancelled.")))
+        }
         if (activeExportId == downloadId) {
             activeTransformer?.cancel()
             finish(Result.failure(CancellationException("Video export was cancelled.")))
         }
         exportDirectory.listFiles()
-            ?.filter { it.name.endsWith("-${Integer.toHexString(downloadId.hashCode())}.mp4") }
+            ?.filter {
+                val suffix = "-${Integer.toHexString(downloadId.hashCode())}.mp4"
+                it.name.endsWith(suffix) || it.name.endsWith("$suffix.partial")
+            }
             ?.forEach(File::delete)
     }
 
@@ -170,7 +195,13 @@ class StreamDownloadExporter(
         activeTransformer = null
         activeExportId = null
         completedCallbacks.forEach { it(result) }
+        mainHandler.post { startNext() }
     }
+
+    private data class PendingExport(
+        val id: String,
+        val callbacks: MutableList<(Result<File>) -> Unit>,
+    )
 
     /** The remuxed MP4 is about the size of the cached segments, plus headroom. */
     private fun requiredBytes(download: Download): Long =
@@ -201,13 +232,13 @@ class StreamDownloadExporter(
             return StreamDownloadExportException(
                 code = "EXPORT_UNSUPPORTED",
                 message = "This video can't be converted for other players. " +
-                    "You can still watch it in FlixQuest.",
+                    "You can still watch it in FastFlix.",
                 cause = error,
             )
         }
         return StreamDownloadExportException(
             code = "EXPORT_FAILED",
-            message = "Could not prepare this video. You can still watch it in FlixQuest.",
+            message = "Could not prepare this video. You can still watch it in FastFlix.",
             cause = error,
         )
     }
@@ -218,11 +249,11 @@ class StreamDownloadExporter(
 
     private fun outputFile(download: Download): File {
         val metadata = StreamDownloadStore.requestMetadata(download.request)
-        val title = metadata.optString("title", "FlixQuest video")
+        val title = metadata.optString("title", "FastFlix video")
             .replace(Regex("[^a-zA-Z0-9._ -]"), "_")
             .trim(' ', '.')
             .take(80)
-            .ifBlank { "FlixQuest video" }
+            .ifBlank { "FastFlix video" }
         val suffix = Integer.toHexString(download.request.id.hashCode())
         return File(exportDirectory, "$title-$suffix.mp4")
     }

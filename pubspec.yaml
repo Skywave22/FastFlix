@@ -93,6 +93,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/fastflix/
     - assets/images/country_flags/
     - assets/images/profiles/
     - assets/translations/

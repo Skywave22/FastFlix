@@ -148,6 +148,15 @@ class TvSettingsScreen extends StatelessWidget {
                 settings.autoLoadSources = !settings.autoLoadSources,
           ),
           _TvSettingTile(
+            key: const ValueKey<String>('prefer-hindi-sources'),
+            label: tr('prefer_hindi_sources'),
+            value: settings.preferHindiSources ? tr('tv_on') : tr('player_off'),
+            icon: PhosphorIcons.translate(),
+            showsNext: false,
+            onActivate: () =>
+                settings.preferHindiSources = !settings.preferHindiSources,
+          ),
+          _TvSettingTile(
             key: const ValueKey<String>('provider-order'),
             label: tr('tv_video_provider_order'),
             value: tr('tv_choose_source_priority'),
@@ -495,7 +504,7 @@ class TvSettingsScreen extends StatelessWidget {
   }
 
   static String _colorThemeLabel(int index) => switch (index) {
-        -1 => 'FlixQuest',
+        -1 => 'FastFlix',
         AppColor.customIndex => tr('tv_custom'),
         1 => tr('tv_indigo'),
         2 => tr('tv_pink'),
@@ -517,7 +526,7 @@ class TvSettingsScreen extends StatelessWidget {
         18 => tr('tv_fuchsia'),
         19 => tr('tv_deep_emerald'),
         20 => tr('tv_coral'),
-        _ => 'FlixQuest',
+        _ => 'FastFlix',
       };
 
   static Future<void> _showThemeModePicker(

@@ -324,6 +324,34 @@ class CatalogController {
     );
   }
 
+  /// The matching weekly trending anime feed behind a Home Top 10 row.
+  MediaCollection animeTrendingCollection({
+    required MediaKind kind,
+    required String title,
+    required SettingsProvider settings,
+    required AppDependencyProvider dependencies,
+  }) {
+    final url = Uri.parse(
+      listUrl(kind, CatalogList.trendingWeek, settings.appLanguage),
+    );
+    final pager = AnimeTrendingPager((page) => loadRow(
+          kind: kind,
+          url: url.replace(queryParameters: {
+            ...url.queryParameters,
+            'page': '$page',
+          }).toString(),
+          settings: settings,
+          dependencies: dependencies,
+          strict: true,
+        ));
+    return MediaCollection(
+      id: '${kind.name}-anime-trending',
+      title: title,
+      kicker: tr(kind == MediaKind.movie ? 'movies' : 'series').toUpperCase(),
+      loadPage: pager.loadPage,
+    );
+  }
+
   /// The whole of one of a catalog page's [list]s, from its row's See all.
   MediaCollection catalogListCollection({
     required MediaKind kind,

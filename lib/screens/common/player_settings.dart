@@ -271,6 +271,14 @@ class _PlayerSettingsState extends State<PlayerSettings>
                     onTap: () => _push(const ProviderChooseScreen()),
                   ),
                   SwitchRow(
+                    icon: PhosphorIcons.translate(),
+                    label: tr('prefer_hindi_sources'),
+                    subtitle: tr('prefer_hindi_sources_description'),
+                    value: settingValues.preferHindiSources,
+                    onChanged: (value) =>
+                        settingValues.preferHindiSources = value,
+                  ),
+                  SwitchRow(
                     icon: PhosphorIcons.lightning(),
                     label: tr('auto_load_sources'),
                     subtitle: tr('auto_load_sources_description'),
@@ -286,6 +294,13 @@ class _PlayerSettingsState extends State<PlayerSettings>
                     onChanged: (value) => setState(
                       () => settingValues.defaultViewMode = value,
                     ),
+                  ),
+                  SwitchRow(
+                    icon: PhosphorIcons.crop(),
+                    label: tr('fill_mobile_screen'),
+                    subtitle: tr('fill_mobile_screen_description'),
+                    value: settingValues.screenFill,
+                    onChanged: (value) => settingValues.screenFill = value,
                   ),
                   SwitchRow(
                     icon: PhosphorIcons.sparkle(),

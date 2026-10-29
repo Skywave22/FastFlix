@@ -48,6 +48,8 @@ class StreamDownloadStore private constructor(context: Context) {
     private val databaseProvider = StandaloneDatabaseProvider(appContext)
     private val downloadIndex = DefaultDownloadIndex(databaseProvider)
     private val settingsStore = DownloadSettingsStore(appContext)
+    internal val publicSettings = PublicDownloadSettings(appContext)
+    internal val exporter by lazy { StreamDownloadExporter(appContext, this) }
     private var downloadSettings = settingsStore.read()
     // Media3 runs HLS/DASH segment requests on this shared, bounded pool.
     private val downloadExecutor = ThreadPoolExecutor(
@@ -86,6 +88,28 @@ class StreamDownloadStore private constructor(context: Context) {
         maxParallelDownloads = downloadSettings.parallelDownloads
         minRetryCount = downloadSettings.retryCount
         requirements = requirementsFor(downloadSettings)
+    }
+
+    init {
+        downloadManager.addListener(object : DownloadManager.Listener {
+            override fun onInitialized(downloadManager: DownloadManager) {
+                // Also recover a copy that was queued when Android killed the app.
+                getDownloads().forEach(::schedulePublicCopy)
+            }
+
+            override fun onDownloadChanged(
+                downloadManager: DownloadManager,
+                download: Download,
+                finalException: Exception?,
+            ) = schedulePublicCopy(download)
+        })
+    }
+
+    private fun schedulePublicCopy(download: Download) {
+        if (download.state == Download.STATE_COMPLETED &&
+            requestMetadata(download.request).optBoolean("publicCopy", false)) {
+            PublicDownloadWorker.schedule(appContext, download.request.id)
+        }
     }
 
     fun getDownloadSettings(): Map<String, Any> = downloadSettings.toMap()
@@ -350,6 +374,9 @@ class StreamDownloadStore private constructor(context: Context) {
             "progress" to percent,
             "bytesDownloaded" to download.bytesDownloaded,
             "contentLength" to download.contentLength,
+            "estimatedBytes" to metadata.optLong("estimatedBytes", -1).takeIf { it > 0 },
+            "publicExportState" to publicSettings.status(download.request.id),
+            "publicExportError" to publicSettings.error(download.request.id),
             "createdAt" to download.startTimeMs,
             "error" to if (download.state == Download.STATE_FAILED) "The download failed. Retry to try again." else null,
             "contentId" to metadata.optInt("contentId").takeIf { it > 0 },
@@ -370,9 +397,14 @@ class StreamDownloadStore private constructor(context: Context) {
         put("subtitle", arguments["subtitle"] as? String ?: "")
         put("mediaType", arguments["mediaType"] as? String ?: "video")
         put("quality", arguments["quality"] as? String ?: "Auto")
+        // Snapshot the destination for this job; changing the preference does
+        // not silently move existing downloads or revoke their permission.
+        put("publicCopy", arguments["publicCopy"] as? Boolean ?: true)
+        put("publicTreeUri", arguments["publicTreeUri"] as? String ?: publicSettings.treeUri())
         put("posterUrl", arguments["posterUrl"] as? String ?: "")
         put("format", arguments["format"] as? String ?: "")
         put("maxVideoHeight", arguments["maxVideoHeight"] ?: JSONObject.NULL)
+        put("estimatedBytes", (arguments["estimatedBytes"] as? Number)?.toLong()?.takeIf { it > 0 } ?: JSONObject.NULL)
         (arguments["source"] as? Map<*, *>)?.let {
             put("source", JSONObject(it))
             put("cacheNamespace", arguments["cacheNamespace"] as? String ?: DownloadRecoveryState.newNamespace())
@@ -495,7 +527,11 @@ class StreamDownloadStore private constructor(context: Context) {
         fun httpFactory(headers: Map<String, String>): DefaultHttpDataSource.Factory =
             DefaultHttpDataSource.Factory()
                 .setAllowCrossProtocolRedirects(true)
-                .setUserAgent("FlixQuest/4.0")
+                // Slow mobile connections should not fail just because a
+                // segment takes longer than Media3's short defaults.
+                .setConnectTimeoutMs(20_000)
+                .setReadTimeoutMs(30_000)
+                .setUserAgent("FastFlix/4.0")
                 .setDefaultRequestProperties(headers)
 
         /** HLS segments can arrive hidden in images; unwrap them before caching, as the player does. */

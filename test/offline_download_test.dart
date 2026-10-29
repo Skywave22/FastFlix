@@ -131,7 +131,7 @@ void main() {
       expect(item.isComplete, isTrue);
     });
 
-    test('estimates adaptive stream size while content length is unknown', () {
+    test('does not infer total bytes from adaptive segment percentage', () {
       final item = OfflineDownload.fromMap({
         'id': 'movie_2',
         'progress': 25,
@@ -140,8 +140,34 @@ void main() {
         'state': 'downloading',
       });
 
-      expect(item.totalBytes, 200 * 1024 * 1024);
-      expect(item.totalBytesIsEstimated, isTrue);
+      expect(item.totalBytes, -1);
+      expect(item.totalBytesIsEstimated, isFalse);
+
+      final withEstimate = OfflineDownload.fromMap({
+        'id': 'movie_2',
+        'state': 'downloading',
+        'progress': 25,
+        'bytesDownloaded': 50 * 1024 * 1024,
+        'estimatedBytes': 200 * 1024 * 1024,
+      });
+      expect(withEstimate.totalBytes, 200 * 1024 * 1024);
+      expect(withEstimate.totalBytesIsEstimated, isTrue);
+      final known = OfflineDownload.fromMap({
+        'id': 'movie_2',
+        'state': 'downloading',
+        'bytesDownloaded': 50,
+        'contentLength': 500,
+        'estimatedBytes': 200,
+      });
+      expect(known.totalBytes, 500);
+      expect(known.totalBytesIsEstimated, isFalse);
+      final surpassed = OfflineDownload.fromMap({
+        'id': 'movie_2',
+        'state': 'downloading',
+        'bytesDownloaded': 250,
+        'estimatedBytes': 200,
+      });
+      expect(surpassed.totalBytes, -1);
     });
 
     test('encodes every source field needed by the native downloader', () {
@@ -444,6 +470,10 @@ class _FakeGateway implements OfflineDownloadGateway {
 
   @override
   Future<void> retry(String id) async => operations.add('retry:$id');
+
+  @override
+  Future<void> retryPublicCopy(String id) async =>
+      operations.add('retryPublicCopy:$id');
 
   @override
   Future<OfflineExportProgress> getExportProgress(String id) async =>

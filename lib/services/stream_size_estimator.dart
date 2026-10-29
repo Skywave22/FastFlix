@@ -1,64 +1,73 @@
+import '../functions/video_utils.dart';
 import '../video_providers/scraper_api.dart';
+import 'manifest_size_estimator.dart';
 
-/// Loads signed stream-size estimates in parallel without making an estimate a
-/// prerequisite for selecting a resolution.
+/// Estimates every listed quality without blocking the picker. Signed scraper
+/// estimates are preferred; bounded manifest/HEAD inspection is a fallback.
+/// All values are approximate and a source may not expose enough information.
 abstract final class StreamSizeEstimator {
-  static const Duration timeout = Duration(seconds: 10);
   static final Map<String, Future<StreamSizeEstimate?>> _inFlightByRequest = {};
 
   static Future<Map<String, int?>> load({
     required String scraperApiUrl,
     required Map<String, String> tokens,
+    required Map<String, String> sources,
+    required Map<String, String> formats,
+    required Map<String, Map<String, String>> headers,
     required Map<String, int?> cacheByToken,
-    void Function(String token, int? estimatedBytes)? onEstimate,
+    void Function(String resolution, int? estimatedBytes)? onEstimate,
+    ManifestSizeEstimator? manifestEstimator,
   }) async {
-    final pendingByToken = <String, Future<StreamSizeEstimate?>>{};
+    final result = <String, int?>{};
+    final pending = sources.entries.toList(growable: false);
+    final manifest = manifestEstimator ?? ManifestSizeEstimator();
+    var next = 0;
 
-    for (final token in tokens.values) {
-      if (token.trim().isEmpty ||
-          cacheByToken.containsKey(token) ||
-          pendingByToken.containsKey(token)) {
-        continue;
-      }
-      final requestKey = '$scraperApiUrl\u0000$token';
-      final request = _inFlightByRequest.putIfAbsent(requestKey, () async {
-        try {
-          return await ScraperApi(scraperApiUrl).estimateStreamSize(token);
-        } finally {
-          _inFlightByRequest.remove(requestKey);
+    Future<void> worker() async {
+      while (next < pending.length) {
+        final entry = pending[next++];
+        final token = tokens[entry.key];
+        int? bytes;
+        if (token != null && token.trim().isNotEmpty) {
+          if (cacheByToken.containsKey(token)) {
+            bytes = cacheByToken[token];
+          } else {
+            final requestKey = '$scraperApiUrl\u0000$token';
+            final request = _inFlightByRequest.putIfAbsent(
+              requestKey,
+              () async {
+                try {
+                  return await ScraperApi(
+                    scraperApiUrl,
+                  ).estimateStreamSize(token);
+                } finally {
+                  _inFlightByRequest.remove(requestKey);
+                }
+              },
+            );
+            bytes = (await request)?.estimatedBytes;
+            // A failed estimate is not cached permanently; a later attempt may
+            // work after a temporary network or backend failure.
+            if (bytes != null && bytes > 0) cacheByToken[token] = bytes;
+          }
         }
-      });
-      pendingByToken[token] = request.then((estimate) {
-        cacheByToken[token] = estimate?.estimatedBytes;
-        onEstimate?.call(token, estimate?.estimatedBytes);
-        return estimate;
-      });
-    }
-
-    final completed = <String, StreamSizeEstimate?>{};
-    final requests = <Future<StreamSizeEstimate?>>[
-      for (final entry in pendingByToken.entries)
-        entry.value.then((estimate) {
-          completed[entry.key] = estimate;
-          return estimate;
-        }),
-    ];
-
-    if (requests.isNotEmpty) {
-      await Future.wait(requests).timeout(
-        timeout,
-        onTimeout: () => <StreamSizeEstimate?>[],
-      );
-    }
-
-    for (final entry in tokens.entries) {
-      if (!cacheByToken.containsKey(entry.value)) {
-        cacheByToken[entry.value] = completed[entry.value]?.estimatedBytes;
-        onEstimate?.call(entry.value, cacheByToken[entry.value]);
+        if (bytes == null || bytes <= 0) {
+          bytes = await manifest.estimate(
+            url: entry.value,
+            format: formats[entry.key] ?? 'hls',
+            headers: headers[entry.key] ?? const {},
+            maxHeight: VideoUtils.videoQualityHeight(entry.key),
+          );
+        }
+        result[entry.key] = bytes;
+        onEstimate?.call(entry.key, bytes);
       }
     }
-    return {
-      for (final entry in tokens.entries) entry.key: cacheByToken[entry.value],
-    };
+
+    // A long quality list should not flood the provider or the user's network.
+    await Future.wait(
+      List.generate(pending.length.clamp(0, 3).toInt(), (_) => worker()),
+    );
+    return result;
   }
 }

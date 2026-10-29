@@ -75,7 +75,11 @@ abstract final class DownloadSelectionSheets {
                 _Choice(
                   value: resolution,
                   title: resolution,
-                  titleDetail: _sizeDescription(sizes, resolution),
+                  titleDetail: _sizeDescription(
+                    sizes,
+                    resolution,
+                    pending: estimatedSizesListenable != null,
+                  ),
                   subtitle: _resolutionDescription(resolution),
                   icon: PhosphorIcons.monitorPlay(),
                 ),
@@ -108,8 +112,12 @@ abstract final class DownloadSelectionSheets {
 
   static String _sizeDescription(
     Map<String, int?> estimatedSizes,
-    String resolution,
-  ) {
+    String resolution, {
+    required bool pending,
+  }) {
+    if (pending && !estimatedSizes.containsKey(resolution)) {
+      return tr('size_calculating');
+    }
     final bytes = estimatedSizes[resolution];
     return bytes == null ? tr('size_unknown') : '~${_formatBytes(bytes)}';
   }

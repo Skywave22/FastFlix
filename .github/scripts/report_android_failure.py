@@ -8,7 +8,7 @@ from pathlib import Path
 
 ANSI = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
 ERROR = re.compile(
-    r"(?:^|\s)(?:error:|failure:|what went wrong:|execution failed|e: |fatal error:)",
+    r"(?:^|\s)(?:error:|failure:|what went wrong:|execution failed|e: |fatal error:|\[E\]|Expected:|Actual:)",
     re.IGNORECASE,
 )
 
@@ -29,7 +29,7 @@ def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit("usage: report_android_failure.py BUILD_LOG")
     for excerpt in annotations(Path(sys.argv[1]).read_text(errors="replace")):
-        print(f"::error title=Android preview build failed::{excerpt}")
+        print(f"::error title=Android validation failed::{excerpt}")
 
 
 if __name__ == "__main__":

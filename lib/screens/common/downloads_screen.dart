@@ -63,14 +63,20 @@ class DownloadsScreen extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 12, 4),
-              child: Row(children: [
-                Expanded(child: Text(
-                  tr('downloads'),
-                  style: AppType.scaled(context, AppType.pageTitle)
-                      .copyWith(color: palette.foreground),
-                )),
-                _DownloadSettingsButton(),
-              ]),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      tr('downloads'),
+                      style: AppType.scaled(
+                        context,
+                        AppType.pageTitle,
+                      ).copyWith(color: palette.foreground),
+                    ),
+                  ),
+                  _DownloadSettingsButton(),
+                ],
+              ),
             ),
             if (provider.error != null) _ErrorBanner(message: provider.error!),
             Expanded(child: content),
@@ -81,8 +87,11 @@ class DownloadsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: palette.page,
-      appBar: PageAppBar(title: tr('downloads'), contentWidth: 760,
-          actions: const [_DownloadSettingsButton()]),
+      appBar: PageAppBar(
+        title: tr('downloads'),
+        contentWidth: 760,
+        actions: const [_DownloadSettingsButton()],
+      ),
       body: Column(
         children: [
           if (provider.error != null) _ErrorBanner(message: provider.error!),
@@ -98,14 +107,14 @@ class _DownloadSettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-        key: const Key('open_download_settings'),
-        tooltip: tr('download_settings'),
-        icon: Icon(PhosphorIcons.slidersHorizontal()),
-        onPressed: () => showAppSheet<bool>(
-          context,
-          builder: (_) => const DownloadSettingsSheet(),
-        ),
-      );
+    key: const Key('open_download_settings'),
+    tooltip: tr('download_settings'),
+    icon: Icon(PhosphorIcons.slidersHorizontal()),
+    onPressed: () => showAppSheet<bool>(
+      context,
+      builder: (_) => const DownloadSettingsSheet(),
+    ),
+  );
 }
 
 class _EmptyDownloads extends StatelessWidget {
@@ -158,10 +167,10 @@ class _DownloadCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final palette = AppPalette.of(context);
-    final export =
-        context.select<OfflineDownloadProvider, OfflineExportProgress?>(
-      (provider) => provider.exportFor(download.id),
-    );
+    final export = context
+        .select<OfflineDownloadProvider, OfflineExportProgress?>(
+          (provider) => provider.exportFor(download.id),
+        );
     return Material(
       color: palette.surface,
       borderRadius: BorderRadius.circular(AppRadii.card),
@@ -184,8 +193,8 @@ class _DownloadCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     if (download.subtitle?.isNotEmpty == true) ...[
                       const SizedBox(height: 2),
@@ -194,8 +203,8 @@ class _DownloadCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colors.onSurfaceVariant,
-                            ),
+                          color: colors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 8),
@@ -234,9 +243,7 @@ class _DownloadCard extends StatelessWidget {
                             export.progress == null
                                 ? 'Preparing export…'
                                 : 'Preparing export ${export.progress}%',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   color: palette.mutedText,
                                   fontWeight: FontWeight.w700,
@@ -249,13 +256,13 @@ class _DownloadCard extends StatelessWidget {
                     LinearProgressIndicator(
                       value: export != null
                           ? export.progress == null
-                              ? null
-                              : export.progress! / 100
+                                ? null
+                                : export.progress! / 100
                           : download.isComplete
-                              ? 1
-                              : download.progress > 0
-                                  ? download.progress / 100
-                                  : null,
+                          ? 1
+                          : download.progress > 0
+                          ? download.progress / 100
+                          : null,
                       minHeight: 5,
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -267,9 +274,7 @@ class _DownloadCard extends StatelessWidget {
                             _progressText(download),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(color: colors.onSurfaceVariant),
                           ),
                         ),
@@ -286,9 +291,7 @@ class _DownloadCard extends StatelessWidget {
                             download.networkRateBytesPerSecond > 0
                                 ? '${_formatBytes(download.networkRateBytesPerSecond.round())}/s'
                                 : 'Starting…',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   color: palette.mutedText,
                                   fontWeight: FontWeight.w700,
@@ -297,14 +300,59 @@ class _DownloadCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    if (download.estimatedTimeRemaining case final remaining?) ...[
+                    if (download.isComplete &&
+                        download.publicExportState != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        switch (download.publicExportState) {
+                          'queued' || 'saving' => tr('public_copy_saving'),
+                          'saved' => tr('public_copy_saved'),
+                          'failed' => tr('public_copy_failed'),
+                          _ => '',
+                        },
+                        key: const Key('public_copy_status'),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: download.publicExportState == 'failed'
+                              ? colors.error
+                              : colors.onSurfaceVariant,
+                        ),
+                      ),
+                      if (download.publicExportState == 'failed') ...[
+                        if (download.publicExportError?.isNotEmpty == true)
+                          Text(
+                            download.publicExportError!,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        TextButton(
+                          key: const Key('retry_public_copy'),
+                          onPressed: () async {
+                            try {
+                              await context
+                                  .read<OfflineDownloadProvider>()
+                                  .retryPublicCopy(download.id);
+                            } catch (_) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(tr('public_copy_failed')),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: Text(tr('public_copy_retry')),
+                        ),
+                      ],
+                    ],
+                    if (download.estimatedTimeRemaining
+                        case final remaining?) ...[
                       const SizedBox(height: 3),
                       Text(
                         _formatEta(remaining),
                         key: const Key('download_eta'),
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: colors.onSurfaceVariant,
-                            ),
+                          color: colors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ],
@@ -370,9 +418,9 @@ class _DownloadMetadata extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: colors.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
+            color: colors.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -419,37 +467,37 @@ class _StatusChip extends StatelessWidget {
     final error = Theme.of(context).colorScheme.error;
     final (label, color) = switch (download.state) {
       OfflineDownloadState.completed => (
-          _localized(context, 'download_status_completed', 'Downloaded'),
-          palette.mutedText
-        ),
+        _localized(context, 'download_status_completed', 'Downloaded'),
+        palette.mutedText,
+      ),
       OfflineDownloadState.downloading => (
-          _localized(context, 'download_status_downloading', 'Downloading'),
-          palette.mutedText
-        ),
+        _localized(context, 'download_status_downloading', 'Downloading'),
+        palette.mutedText,
+      ),
       OfflineDownloadState.queued => (
-          _localized(context, 'download_status_queued', 'Queued'),
-          palette.mutedText
-        ),
+        _localized(context, 'download_status_queued', 'Queued'),
+        palette.mutedText,
+      ),
       OfflineDownloadState.stopped => (
-          _localized(context, 'download_status_stopped', 'Paused'),
-          palette.mutedText
-        ),
+        _localized(context, 'download_status_stopped', 'Paused'),
+        palette.mutedText,
+      ),
       OfflineDownloadState.failed => (
-          _localized(context, 'download_status_failed', 'Failed'),
-          error
-        ),
+        _localized(context, 'download_status_failed', 'Failed'),
+        error,
+      ),
       OfflineDownloadState.removing => (
-          _localized(context, 'download_status_removing', 'Removing'),
-          palette.mutedText
-        ),
+        _localized(context, 'download_status_removing', 'Removing'),
+        palette.mutedText,
+      ),
       OfflineDownloadState.restarting => (
-          _localized(context, 'download_status_restarting', 'Restarting'),
-          palette.mutedText
-        ),
+        _localized(context, 'download_status_restarting', 'Restarting'),
+        palette.mutedText,
+      ),
       OfflineDownloadState.unknown => (
-          _localized(context, 'download_status_unknown', 'Unknown'),
-          palette.mutedText
-        ),
+        _localized(context, 'download_status_unknown', 'Unknown'),
+        palette.mutedText,
+      ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -554,8 +602,9 @@ class _DownloadActions extends StatelessWidget {
       final completed = await operation();
       if (context.mounted) _track(context, analyticsAction, 'success');
       if (completed && successMessage != null && context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(successMessage)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(successMessage)));
       }
     } catch (error) {
       if (context.mounted) {
@@ -570,8 +619,9 @@ class _DownloadActions extends StatelessWidget {
         );
       }
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_exportErrorMessage(error))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_exportErrorMessage(error))));
     }
   }
 
@@ -645,8 +695,8 @@ class _DownloadActionsSheet extends StatelessWidget {
                       Text(
                         '${download.quality}  •  ${_totalSizeText(download)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colors.onSurfaceVariant,
-                            ),
+                          color: colors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -700,7 +750,7 @@ class _DownloadActionsSheet extends StatelessWidget {
               icon: PhosphorIcons.trash(PhosphorIconsStyle.bold),
               title: 'Delete download',
               subtitle: download.isComplete
-                  ? 'Remove the saved video from this device'
+                  ? tr('download_delete_cache_description')
                   : 'Cancel and remove downloaded data',
               destructive: true,
               onTap: () => Navigator.pop(context, _DownloadAction.delete),
@@ -738,8 +788,9 @@ class _DownloadActionTile extends StatelessWidget {
     final palette = AppPalette.of(context);
     final accent = destructive ? colors.error : palette.foreground;
     return Material(
-      color:
-          destructive ? colors.error.withValues(alpha: .08) : palette.idleFill,
+      color: destructive
+          ? colors.error.withValues(alpha: .08)
+          : palette.idleFill,
       borderRadius: BorderRadius.circular(AppRadii.card),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadii.card),
@@ -767,16 +818,16 @@ class _DownloadActionTile extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: destructive ? colors.error : null,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: destructive ? colors.error : null,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -796,7 +847,7 @@ class _DownloadActionTile extends StatelessWidget {
 
 String _totalSizeText(OfflineDownload download) {
   final total = download.totalBytes;
-  if (total <= 0) return 'Calculating size';
+  if (total <= 0) return tr('size_unknown');
   final prefix = download.totalBytesIsEstimated ? '~' : '';
   return '$prefix${_formatBytes(total)}';
 }

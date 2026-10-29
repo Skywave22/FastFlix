@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../models/offline_download.dart';
 import '../models/download_settings.dart';
+import '../models/download_location.dart';
 
 abstract interface class OfflineDownloadGateway {
   Stream<List<OfflineDownload>> get downloadEvents;
@@ -12,6 +13,7 @@ abstract interface class OfflineDownloadGateway {
   Future<void> pause(String id);
   Future<void> resume(String id);
   Future<void> retry(String id);
+  Future<void> retryPublicCopy(String id);
   Future<void> remove(String id);
   Future<OfflineExportProgress> getExportProgress(String id);
   Future<void> openExternal(String id);
@@ -106,6 +108,28 @@ class OfflineDownloadService implements OfflineDownloadGateway {
     return DownloadSettings.fromMap(raw ?? settings.toMap());
   }
 
+  Future<DownloadLocation> getDownloadLocation() async {
+    final raw = await _methods.invokeMapMethod<Object?, Object?>(
+      'getDownloadLocation',
+    );
+    return DownloadLocation.fromMap(raw ?? const {});
+  }
+
+  /// Null means the user dismissed the Android folder picker.
+  Future<DownloadLocation?> chooseDownloadLocation() async {
+    final raw = await _methods.invokeMapMethod<Object?, Object?>(
+      'chooseDownloadLocation',
+    );
+    return raw == null ? null : DownloadLocation.fromMap(raw);
+  }
+
+  Future<DownloadLocation> resetDownloadLocation() async {
+    final raw = await _methods.invokeMapMethod<Object?, Object?>(
+      'resetDownloadLocation',
+    );
+    return DownloadLocation.fromMap(raw ?? const {});
+  }
+
   Future<List<OfflineAudioTrack>> getAudioTracks({
     required String url,
     required String format,
@@ -135,6 +159,10 @@ class OfflineDownloadService implements OfflineDownloadGateway {
   @override
   Future<void> retry(String id) =>
       _methods.invokeMethod<void>('retry', {'id': id});
+
+  @override
+  Future<void> retryPublicCopy(String id) =>
+      _methods.invokeMethod<void>('retryPublicCopy', {'id': id});
 
   @override
   Future<void> remove(String id) =>

@@ -82,6 +82,9 @@ class OfflineDownload {
     required this.contentLength,
     required this.createdAt,
     this.networkRateBytesPerSecond = 0,
+    this.estimatedBytes,
+    this.publicExportState,
+    this.publicExportError,
     this.subtitle,
     this.posterUrl,
     this.error,
@@ -102,6 +105,11 @@ class OfflineDownload {
   final double progress;
   final int bytesDownloaded;
   final int contentLength;
+  final int? estimatedBytes;
+
+  /// The optional user-visible copy is separate from the offline cache.
+  final String? publicExportState;
+  final String? publicExportError;
   final DateTime createdAt;
   final double networkRateBytesPerSecond;
   final String? posterUrl;
@@ -119,14 +127,24 @@ class OfflineDownload {
       state == OfflineDownloadState.queued ||
       state == OfflineDownloadState.restarting;
 
-  bool get totalBytesIsEstimated => contentLength <= 0 && !isComplete;
+  bool get totalBytesIsEstimated =>
+      !isComplete &&
+      !(contentLength > 0 && contentLength >= bytesDownloaded) &&
+      estimatedBytes != null &&
+      estimatedBytes! > bytesDownloaded;
 
   int get totalBytes {
-    if (contentLength > 0) return contentLength;
     if (isComplete) return bytesDownloaded;
-    if (bytesDownloaded > 0 && progress > 0) {
-      return (bytesDownloaded * 100 / progress).round();
+    if (contentLength > 0 && contentLength >= bytesDownloaded) {
+      return contentLength;
     }
+    final estimate = estimatedBytes;
+    if (estimate != null && estimate > 0) {
+      // Don't keep showing a total already surpassed by the actual bytes.
+      return estimate > bytesDownloaded ? estimate : -1;
+    }
+    // Adaptive progress is often a segment count, not a byte percentage;
+    // extrapolating from it causes wildly fluctuating and misleading totals.
     return -1;
   }
 
@@ -154,6 +172,9 @@ class OfflineDownload {
       progress: progress,
       bytesDownloaded: bytesDownloaded,
       contentLength: contentLength,
+      estimatedBytes: estimatedBytes,
+      publicExportState: publicExportState,
+      publicExportError: publicExportError,
       createdAt: createdAt,
       networkRateBytesPerSecond:
           networkRateBytesPerSecond ?? this.networkRateBytesPerSecond,
@@ -186,6 +207,9 @@ class OfflineDownload {
       progress: rawProgress.isFinite ? rawProgress.clamp(0, 100) : 0,
       bytesDownloaded: value<num>('bytesDownloaded')?.toInt() ?? 0,
       contentLength: value<num>('contentLength')?.toInt() ?? -1,
+      estimatedBytes: value<num>('estimatedBytes')?.toInt(),
+      publicExportState: value<String>('publicExportState'),
+      publicExportError: value<String>('publicExportError'),
       createdAt: DateTime.fromMillisecondsSinceEpoch(
         value<num>('createdAt')?.toInt() ?? 0,
       ),
@@ -228,6 +252,7 @@ class OfflineDownloadRequest {
     this.subtitle,
     this.posterUrl,
     this.maxVideoHeight,
+    this.estimatedBytes,
     this.headers = const {},
     this.contentId,
     this.seasonNumber,
@@ -248,6 +273,7 @@ class OfflineDownloadRequest {
   final String quality;
   final String? posterUrl;
   final int? maxVideoHeight;
+  final int? estimatedBytes;
   final Map<String, String> headers;
   final int? contentId;
   final int? seasonNumber;
@@ -268,6 +294,7 @@ class OfflineDownloadRequest {
         'quality': quality,
         'posterUrl': posterUrl,
         'maxVideoHeight': maxVideoHeight,
+        'estimatedBytes': estimatedBytes,
         'headers': headers,
         'audioTrack': audioTrack?.selection,
         'audioTrackName': audioTrack?.name,

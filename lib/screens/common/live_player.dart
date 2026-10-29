@@ -217,15 +217,19 @@ class _LivePlayerState extends State<LivePlayer> {
 
     BetterPlayerConfiguration betterPlayerConfiguration =
         BetterPlayerConfiguration(
-      autoDetectFullscreenDeviceOrientation: !widget.useTvControls,
-      autoDetectFullscreenAspectRatio: !widget.useTvControls,
+      autoDetectFullscreenDeviceOrientation:
+          !widget.useTvControls && !_settings.screenFill,
+      autoDetectFullscreenAspectRatio:
+          !widget.useTvControls && !_settings.screenFill,
       looping: false,
       autoPlay: true,
       // PlaybackWakeLock keeps the screen on for the whole session. Better
       // Player's own hold covers only its fullscreen route and clears the flag
       // on the way out, under whatever else still needs it.
       allowedScreenSleep: true,
-      fit: BoxFit.contain,
+      fit: !widget.useTvControls && _settings.screenFill
+          ? BoxFit.cover
+          : BoxFit.contain,
       // Sampling video frames for glow is costly on TV GPUs.
       enableAmbientGlow: !widget.useTvControls,
       autoDispose: true,

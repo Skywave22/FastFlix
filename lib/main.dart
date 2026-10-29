@@ -141,6 +141,7 @@ Future<DevicePresentation> appInitialize({
   currentAppVersion = (await PackageInfo.fromPlatform()).version;
   sharedPrefsSingleton = await SharedPreferencesSingleton.getInstance();
   await settingsProvider.getCurrentAppMode();
+  await settingsProvider.getFastFlixLogo();
   DevicePresentationService.instance.isTelevision =
       settingsProvider.appMode.resolve(devicePresentation) ==
           DevicePresentation.television;
@@ -162,6 +163,7 @@ Future<DevicePresentation> appInitialize({
   await settingsProvider.getSubtitleLanguage();
   await settingsProvider.getSubtitleMode();
   await settingsProvider.getViewMode();
+  await settingsProvider.getScreenFill();
   await settingsProvider.getSubtitleSize();
   await settingsProvider.getForegroundSubtitleColor();
   await settingsProvider.getBackgroundSubtitleColor();
@@ -169,6 +171,7 @@ Future<DevicePresentation> appInitialize({
   await settingsProvider.getAppColorIndex();
   await settingsProvider.getCustomAppColor();
   await settingsProvider.getStreamProviderOrder();
+  await settingsProvider.getPreferHindiSources();
   await settingsProvider.getPlayerTimeStyle();
   await settingsProvider.getUseProxyMode();
   await settingsProvider.getSubtitleStyle();

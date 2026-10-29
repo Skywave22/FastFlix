@@ -52,6 +52,7 @@ class _FakeSource implements HomeFeedSource {
     final ids = switch (list) {
       HomeList.trendingToday => <int>[base, base + 1, base + 2],
       HomeList.trendingWeek => <int>[base + 3, base + 4],
+      HomeList.animeTrending => <int>[base + 9, base + 10],
       HomeList.popular => <int>[base + 5],
       HomeList.topRated => <int>[base + 6],
       HomeList.newReleases => <int>[base + 7],
@@ -186,6 +187,7 @@ Future<List<Widget>> _rows(
   required HomeFeed feed,
   List<MediaItem> continueWatching = const [],
   List<MediaItem> myList = const [],
+  void Function(MediaKind, HomeList, String)? onOpenList,
 }) async {
   late List<Widget> rows;
   await tester.pumpWidget(
@@ -206,7 +208,7 @@ Future<List<Widget>> _rows(
             loadCategory: (_) async => const <MediaItem>[],
             onOpenCategory: (_) {},
             onOpenService: (_) {},
-            onOpenList: (_, __, ___) {},
+            onOpenList: onOpenList ?? (_, __, ___) {},
           );
           return const SizedBox();
         },
@@ -247,6 +249,8 @@ void main() {
       'continue_watching',
       'top_10_movies_today',
       'top_10_series_today',
+      'top_anime_movies',
+      'top_anime_series',
       'trending_movies_week',
       'trending_series_week',
       'my_list',
@@ -280,7 +284,9 @@ void main() {
       final feed = await HomeFeedController(_FakeSource()).load(filter);
       final rows = await _rows(tester, filter: filter, feed: feed);
       expect(rows.map(_describe), contains(title));
-      final top = rows.whereType<TopTenRow>().single;
+      final top = rows.whereType<TopTenRow>().firstWhere(
+        (row) => row.title == title,
+      );
       expect(
         top.items.every(
           (item) =>
@@ -297,6 +303,28 @@ void main() {
         await HomeFeedController(_FakeSource()).load(HomeFilter.series);
     final rows = await _rows(tester, filter: HomeFilter.series, feed: series);
     expect(rows.map(_describe), isNot(contains('upcoming_movies')));
+  });
+
+  testWidgets('anime movie and series rows open their own catalogs', (
+    tester,
+  ) async {
+    final feed = await HomeFeedController(_FakeSource()).load(HomeFilter.all);
+    final opened = <(MediaKind, HomeList, String)>[];
+    final rows = await _rows(
+      tester,
+      filter: HomeFilter.all,
+      feed: feed,
+      onOpenList: (kind, list, title) => opened.add((kind, list, title)),
+    );
+    for (final row in rows.whereType<TopTenRow>().where(
+      (row) => row.onSeeAll != null,
+    )) {
+      row.onSeeAll!();
+    }
+    expect(opened, [
+      (MediaKind.movie, HomeList.animeTrending, 'top_anime_movies'),
+      (MediaKind.series, HomeList.animeTrending, 'top_anime_series'),
+    ]);
   });
 
   testWidgets('a title shows in at most two of the first five rows',
@@ -464,7 +492,11 @@ void main() {
           .map((text) => text.data);
       expect(accentTexts, isEmpty);
       expect(find.text('CONTINUE_WATCHING'), findsOneWidget);
-      expect(find.text('FLIXQUEST'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((widget) =>
+            widget is Image && widget.semanticLabel == 'FastFlix'),
+        findsOneWidget,
+      );
       final accentIcons = tester
           .widgetList<Icon>(find.byType(Icon))
           .where((icon) => icon.color == accent);

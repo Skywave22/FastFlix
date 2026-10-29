@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/download_settings.dart';
+import '../../models/download_location.dart';
 import '../../services/offline_download_service.dart';
 
 /// Advanced limits apply to the whole Android download queue, including jobs
@@ -22,6 +23,9 @@ class DownloadSettingsSheet extends StatefulWidget {
 
 class _DownloadSettingsSheetState extends State<DownloadSettingsSheet> {
   DownloadSettings? _settings;
+  DownloadLocation? _location;
+  bool _locationBusy = false;
+  bool _locationFailed = false;
   bool _loading = true;
   bool _saving = false;
   bool _failed = false;
@@ -30,6 +34,7 @@ class _DownloadSettingsSheetState extends State<DownloadSettingsSheet> {
   void initState() {
     super.initState();
     _load();
+    _loadLocation();
   }
 
   Future<void> _load() async {
@@ -45,6 +50,35 @@ class _DownloadSettingsSheetState extends State<DownloadSettingsSheet> {
       if (mounted) setState(() => _failed = true);
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadLocation() async {
+    try {
+      final value = await OfflineDownloadService.instance.getDownloadLocation();
+      if (mounted) setState(() => _location = value);
+    } catch (_) {
+      // The download service is Android-only; advanced controls can still be
+      // displayed in tests or on other platforms without the location picker.
+    }
+  }
+
+  Future<void> _changeLocation({bool reset = false}) async {
+    if (_locationBusy) return;
+    setState(() {
+      _locationBusy = true;
+      _locationFailed = false;
+    });
+    try {
+      final service = OfflineDownloadService.instance;
+      final value = reset
+          ? await service.resetDownloadLocation()
+          : await service.chooseDownloadLocation();
+      if (mounted && value != null) setState(() => _location = value);
+    } catch (_) {
+      if (mounted) setState(() => _locationFailed = true);
+    } finally {
+      if (mounted) setState(() => _locationBusy = false);
     }
   }
 
@@ -123,6 +157,50 @@ class _DownloadSettingsSheetState extends State<DownloadSettingsSheet> {
                 Text(tr('download_settings_error')),
                 TextButton(onPressed: _load, child: Text(tr('retry'))),
               ] else ...[
+                if (_location != null) ...[
+                  Text(
+                    tr('download_location'),
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _location!.label,
+                    key: const Key('download_location_label'),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    tr('download_location_description'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      TextButton(
+                        key: const Key('choose_download_location'),
+                        onPressed: _locationBusy
+                            ? null
+                            : () => _changeLocation(),
+                        child: Text(tr('download_choose_folder')),
+                      ),
+                      if (!_location!.isDefault)
+                        TextButton(
+                          key: const Key('reset_download_location'),
+                          onPressed: _locationBusy
+                              ? null
+                              : () => _changeLocation(reset: true),
+                          child: Text(tr('download_use_default_folder')),
+                        ),
+                    ],
+                  ),
+                  if (_locationFailed)
+                    Text(
+                      tr('download_location_error'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                ],
                 _slider(
                   key: const Key('download_segments_slider'),
                   title: tr('download_segments'),

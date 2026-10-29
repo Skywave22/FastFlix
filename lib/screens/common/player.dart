@@ -473,11 +473,16 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
               ]);
     BetterPlayerConfiguration betterPlayerConfiguration =
         BetterPlayerConfiguration(
-            autoDetectFullscreenDeviceOrientation: !widget.useTvControls,
+            // Fill mode uses the landscape screen's aspect ratio instead of
+            // the video's, cropping the edges when their shapes differ.
+            autoDetectFullscreenDeviceOrientation:
+                !widget.useTvControls && !settings.screenFill,
             fullScreenByDefault:
                 widget.useTvControls ? false : widget.settings.defaultViewMode,
             autoPlay: true,
-            fit: BoxFit.contain,
+            fit: !widget.useTvControls && settings.screenFill
+                ? BoxFit.cover
+                : BoxFit.contain,
             // Ambient glow continuously samples the video frame and is costly
             // on TV GPUs. Keep the existing effect for mobile playback.
             enableAmbientGlow: !widget.useTvControls,
@@ -488,7 +493,8 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
             // Better Player's own hold covers only its fullscreen route and
             // clears the flag on the way out, under whatever else needs it.
             allowedScreenSleep: true,
-            autoDetectFullscreenAspectRatio: !widget.useTvControls,
+            autoDetectFullscreenAspectRatio:
+                !widget.useTvControls && !settings.screenFill,
             errorBuilder: (context, _) =>
                 _buildCustomPlayerErrorWidget(context),
             // Provider links expire mid-movie; resolve the provider again
@@ -1380,6 +1386,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
     final selectedSource = VideoUtils.preferredVideoSource(
       sources,
       widget.settings.defaultVideoResolution,
+      preferHindi: widget.settings.preferHindiSources,
     )!;
     final link = selectedSource.value;
     final suppliedHeaders = videoHeaders[selectedSource.key];
@@ -2643,6 +2650,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
                     provider: provider,
                     movieId: widget.movieMetadata!.movieId!,
                     scraperApiUrl: _resolveScraperApiUrl(),
+                    full: widget.settings.preferHindiSources,
                   )
                 : ProviderLoader.loadTVFromProvider(
                     provider: provider,
@@ -2650,6 +2658,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
                     seasonNumber: widget.tvMetadata!.seasonNumber!,
                     episodeNumber: widget.tvMetadata!.episodeNumber!,
                     scraperApiUrl: _resolveScraperApiUrl(),
+                    full: widget.settings.preferHindiSources,
                   );
         final result = await resultFuture;
         if (!result.success || result.videoLinks?.isEmpty != false) {
@@ -3464,14 +3473,22 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
     unawaited(StreamSizeEstimator.load(
       scraperApiUrl: _resolveScraperApiUrl(),
       tokens: _activeVideoSizeTokens,
+      sources: sources,
+      formats: {
+        for (final key in sources.keys)
+          key: formats[key] == BetterPlayerVideoFormat.dash ? 'dash' : 'hls',
+      },
+      headers: {
+        for (final entry in sources.entries)
+          entry.key:
+              headers[entry.key] ??
+              VideoUtils.inferVideoHeaders(entry.value) ??
+              const {},
+      },
       cacheByToken: _streamSizeCacheByToken,
-      onEstimate: (token, bytes) {
+      onEstimate: (resolution, bytes) {
         if (!sizePickerOpen) return;
-        final next = Map<String, int?>.of(estimatedSizes.value);
-        for (final entry in _activeVideoSizeTokens.entries) {
-          if (entry.value == token) next[entry.key] = bytes;
-        }
-        estimatedSizes.value = next;
+        estimatedSizes.value = {...estimatedSizes.value, resolution: bytes};
       },
     ));
     final resolution = await DownloadSelectionSheets.showResolution(
@@ -3481,6 +3498,9 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
       providerName: providerName,
       estimatedSizesListenable: estimatedSizes,
     );
+    final selectedEstimate = resolution == null
+        ? null
+        : estimatedSizes.value[resolution];
     sizePickerOpen = false;
     estimatedSizes.dispose();
     if (!mounted || resolution == null) return;
@@ -3538,6 +3558,7 @@ class _PlayerOneState extends State<PlayerOne> with WidgetsBindingObserver {
                       '${episode?.episodeName ?? ''} • $providerName',
               mediaType: isMovie ? 'movie' : 'episode',
               quality: resolution,
+              estimatedBytes: selectedEstimate,
               posterUrl: posterPath == null
                   ? null
                   : '${TMDB_BASE_IMAGE_URL}w500$posterPath',

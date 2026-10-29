@@ -15,6 +15,8 @@ import '/provider/app_dependency_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'player_settings.dart';
+import 'fastflix_logo_picker.dart';
+import '../../models/fastflix_logo.dart';
 import '../../design/app_palette.dart';
 import '../../design/app_tokens.dart';
 import '../../mobile/widgets/page_kit.dart';
@@ -98,6 +100,20 @@ class _SettingsState extends State<Settings> {
     );
   }
 
+  Future<void> _pickLogo(SettingsProvider settingsValues) async {
+    final logo = await showAppSheet<FastFlixLogo>(
+      context,
+      builder: (_) => FastFlixLogoPicker(selected: settingsValues.fastFlixLogo),
+    );
+    if (logo == null || !mounted) return;
+    final launcherUpdated = await settingsValues.setFastFlixLogo(logo);
+    if (mounted && !launcherUpdated) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(tr('launcher_logo_unavailable'))));
+    }
+  }
+
   Future<void> _pickCustomColor(SettingsProvider settingsValues) async {
     final picked = await showColorPickerSheet(
       context,
@@ -149,6 +165,16 @@ class _SettingsState extends State<Settings> {
             SettingsGroup(
               title: tr('appearance'),
               children: [
+                ListRow(
+                  icon: PhosphorIcons.imageSquare(),
+                  label: tr('choose_app_logo'),
+                  value: tr(switch (settingsValues.fastFlixLogo) {
+                    FastFlixLogo.play => 'logo_play',
+                    FastFlixLogo.wing => 'logo_wing',
+                    FastFlixLogo.f => 'logo_f',
+                  }),
+                  onTap: () => _pickLogo(settingsValues),
+                ),
                 ChoiceRow<String>(
                   icon: PhosphorIcons.moon(),
                   label: tr('theme_mode'),

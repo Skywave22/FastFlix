@@ -728,7 +728,7 @@ class _UpdateBottomState extends State<UpdateBottom> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'FlixQuest $version',
+                      'FastFlix $version',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -985,7 +985,7 @@ class _UpdateHero extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'FlixQuest $latest',
+                        'FastFlix $latest',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppType.pageTitle.copyWith(

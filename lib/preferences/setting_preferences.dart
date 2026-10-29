@@ -4,6 +4,15 @@ import 'package:flixquest/models/app_mode.dart';
 import 'package:flixquest/models/default_home.dart';
 
 class SettingsPreferences {
+  static const FASTFLIX_LOGO = 'fastflix_logo';
+
+  Future<void> setFastFlixLogo(String id) async {
+    await sharedPrefsSingleton.setString(FASTFLIX_LOGO, id);
+  }
+
+  Future<String?> getFastFlixLogo() async =>
+      sharedPrefsSingleton.getString(FASTFLIX_LOGO);
+
   static const APP_MODE = 'app_mode';
 
   Future<void> setAppMode(AppMode mode) async {
@@ -135,6 +144,24 @@ class SettingsPreferences {
   Future<String> getSubLanguage() async {
     return sharedPrefsSingleton.getString(DEFAULT_SUBTITLE) ?? 'en';
   }
+
+  static const PREFER_HINDI_SOURCES = 'prefer_hindi_sources';
+
+  Future<void> setPreferHindiSources(bool value) async {
+    await sharedPrefsSingleton.setBool(PREFER_HINDI_SOURCES, value);
+  }
+
+  Future<bool> getPreferHindiSources() async =>
+      sharedPrefsSingleton.getBool(PREFER_HINDI_SOURCES) ?? true;
+
+  static const SCREEN_FILL = 'screen_fill';
+
+  Future<void> setScreenFill(bool value) async {
+    await sharedPrefsSingleton.setBool(SCREEN_FILL, value);
+  }
+
+  Future<bool> getScreenFill() async =>
+      sharedPrefsSingleton.getBool(SCREEN_FILL) ?? false;
 
   static const DEFAULT_FULL_SCREEN = 'default_full_screen';
   setDefaultFullScreen(bool mode) async {

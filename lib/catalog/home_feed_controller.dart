@@ -6,6 +6,7 @@ import '../provider/app_dependency_provider.dart';
 import '../provider/settings_provider.dart';
 import '../widgets/common_widgets.dart' show AppStreamingService;
 import 'catalog_controller.dart';
+import 'anime_genre.dart';
 import 'media_item.dart';
 
 /// What the phone's Home page shows: everything, or one kind.
@@ -28,6 +29,9 @@ enum HomeList {
   /// Today's most watched, for the Top 10 and the hero.
   trendingToday,
   trendingWeek,
+
+  /// Weekly trending Japanese animation.
+  animeTrending,
   popular,
   topRated,
 
@@ -82,6 +86,9 @@ class CatalogHomeFeedSource implements HomeFeedSource {
       HomeList.trendingWeek => isMovie
           ? Endpoints.trendingMoviesUrl(language)
           : Endpoints.trendingTVUrl(language),
+      HomeList.animeTrending => isMovie
+          ? Endpoints.trendingMoviesUrl(language)
+          : Endpoints.trendingTVUrl(language),
       HomeList.popular => isMovie
           ? Endpoints.popularMoviesUrl(language)
           : Endpoints.popularTVUrl(language),
@@ -100,12 +107,36 @@ class CatalogHomeFeedSource implements HomeFeedSource {
   Future<List<MediaItem>> list(MediaKind kind, HomeList list) {
     final url = urlFor(kind, list);
     if (url == null) return Future.value(const <MediaItem>[]);
+    if (list == HomeList.animeTrending) return _trendingAnime(kind);
     return catalog.loadRow(
       kind: kind,
       url: url,
       settings: settings,
       dependencies: dependencies,
     );
+  }
+
+  Future<List<MediaItem>> _trendingAnime(MediaKind kind) async {
+    final trendingUrl = Uri.parse(urlFor(kind, HomeList.trendingWeek)!);
+    final pages = await Future.wait([
+      for (var page = 1; page <= 5; page++)
+        catalog.loadRow(
+          kind: kind,
+          url: trendingUrl
+              .replace(
+                queryParameters: {
+                  ...trendingUrl.queryParameters,
+                  'page': '$page',
+                },
+              )
+              .toString(),
+          settings: settings,
+          dependencies: dependencies,
+        ),
+    ]);
+    // Do not silently fill a trending ranking with merely popular titles.
+    // If TMDB exposes fewer than ten matches in these pages, show fewer.
+    return topTrendingAnime(pages.expand((items) => items));
   }
 
   @override
@@ -166,11 +197,21 @@ class CatalogHomeFeedSource implements HomeFeedSource {
       );
 }
 
+/// Keep TMDB's trending order while filtering to Japanese animation.
+List<MediaItem> topTrendingAnime(Iterable<MediaItem> items) {
+  final seen = <String>{};
+  return items
+      .where((item) => isAnime(item) && seen.add(item.stableId))
+      .take(10)
+      .toList(growable: false);
+}
+
 /// One kind's rows on Home. Movies and series never share a catalogue row,
 /// so it's always clear which a poster is.
 class KindRows {
   const KindRows({
     this.topTen = const <MediaItem>[],
+    this.animeTopTen = const <MediaItem>[],
     this.trending = const <MediaItem>[],
     this.popular = const <MediaItem>[],
     this.newReleases = const <MediaItem>[],
@@ -182,6 +223,7 @@ class KindRows {
   static const empty = KindRows();
 
   final List<MediaItem> topTen;
+  final List<MediaItem> animeTopTen;
   final List<MediaItem> trending;
   final List<MediaItem> popular;
 
@@ -194,10 +236,14 @@ class KindRows {
   final List<ServiceShelf> serviceShelves;
 
   MediaItem? get first =>
-      topTen.firstOrNull ?? trending.firstOrNull ?? popular.firstOrNull;
+      topTen.firstOrNull ??
+      animeTopTen.firstOrNull ??
+      trending.firstOrNull ??
+      popular.firstOrNull;
 
   bool get isEmpty =>
       topTen.isEmpty &&
+      animeTopTen.isEmpty &&
       trending.isEmpty &&
       popular.isEmpty &&
       newReleases.isEmpty &&
@@ -390,6 +436,7 @@ class HomeFeedController {
       list(HomeList.newReleases),
       list(HomeList.topRated),
       list(HomeList.upcoming),
+      list(HomeList.animeTrending),
     ]);
     // Top 10, Trending and New releases lead the page; keep them from
     // showing the same few titles over and over.
@@ -401,6 +448,7 @@ class HomeFeedController {
     return (
       KindRows(
         topTen: lead[0],
+        animeTopTen: lists[6].take(10).toList(growable: false),
         trending: _row(lead[1]),
         popular: _row(lists[2]),
         newReleases: _row(lead[2]),

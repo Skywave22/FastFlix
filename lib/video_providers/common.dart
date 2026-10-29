@@ -2,6 +2,9 @@ class RegularVideoLinks {
   String? url;
   String? quality;
   String? server;
+
+  /// Optional audio-language hint supplied by a provider, not a guarantee.
+  String? language;
   bool? isM3U8;
   bool? isDash;
   Map<String, String>? headers;
@@ -11,6 +14,7 @@ class RegularVideoLinks {
     this.url,
     this.quality = 'unknown quality',
     this.server,
+    this.language,
     this.isM3U8,
     this.isDash,
     this.headers,
@@ -20,6 +24,9 @@ class RegularVideoLinks {
   RegularVideoLinks.fromJson(Map<String, dynamic> json) {
     url = json['url'];
     server = json['server']?.toString();
+    language =
+        (json['language'] ?? json['audioLanguage'] ?? json['hlsAudioLanguage'])
+            ?.toString();
     if (json.containsKey('quality')) {
       quality = json['quality'];
     } else {

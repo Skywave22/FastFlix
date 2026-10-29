@@ -40,7 +40,7 @@ class AboutPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpace.lg),
               Text(
-                'FlixQuest',
+                'FastFlix',
                 textAlign: TextAlign.center,
                 style: AppType.scaled(context, AppType.pageTitle)
                     .copyWith(color: palette.foreground),
