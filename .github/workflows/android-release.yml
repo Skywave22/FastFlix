@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: BeamlakAschalew/flixquest-betterplayer
-          ref: 06f36400831b7b9119bd0c043034e1cf39de2d5a
+          ref: 9a4753b317c7153dbfc10738a6787fb3e5be8610
           path: flixquest-betterplayer
           persist-credentials: false
 
@@ -69,15 +69,13 @@ jobs:
           import os, re
           from pathlib import Path
           lines = Path(os.environ['RUNNER_TEMP'], 'previous-android.log').read_text(errors='replace').splitlines()
-          markers = re.compile(r'error:|error\b|failed|exception|could not|what went wrong', re.I)
+          markers = re.compile(r'Error:|FAILURE:|What went wrong:|^.* e: |^.* error:')
           indices = [i for i, line in enumerate(lines) if markers.search(line)]
-          chosen = set()
-          for index in indices:
-              chosen.update(range(max(0, index - 1), min(len(lines), index + 5)))
-          excerpt = '\n'.join(lines[i] for i in sorted(chosen))[-24000:] or '\n'.join(lines[-100:])
-          excerpt = re.sub(r'\x1b\[[0-9;]*m', '', excerpt)
-          excerpt = excerpt.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
-          print('::error title=Previous Android build failure::' + excerpt)
+          for number, index in enumerate(indices[-20:], start=1):
+              excerpt = '\n'.join(lines[index:min(len(lines), index + 5)])[:3500]
+              excerpt = re.sub(r'\x1b\[[0-9;]*m', '', excerpt)
+              excerpt = excerpt.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print(f'::error title=Previous Android failure {number}::' + excerpt)
           PY
           exit 1
 

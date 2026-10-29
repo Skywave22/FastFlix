@@ -211,7 +211,7 @@ better_player_plus:
    ```bash
    cd ..
    git clone https://github.com/BeamlakAschalew/flixquest-betterplayer.git
-   git -C flixquest-betterplayer checkout --detach 06f36400831b7b9119bd0c043034e1cf39de2d5a
+   git -C flixquest-betterplayer checkout --detach 9a4753b317c7153dbfc10738a6787fb3e5be8610
    cd flixquest
    ```
 
