@@ -1,0 +1,28 @@
+name: Inspect preview startup diagnostics
+
+on:
+  push:
+    branches:
+      - 'arena/f6eedbd9-fastflix'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v7
+        with:
+          repository: ${{ github.repository }}
+          run-id: 40856547620
+          github-token: ${{ github.token }}
+          name: FastFlix-preview-startup-diagnostics
+          path: prior-startup
+      - run: python3 -m pip install --quiet pillow
+      - run: python3 .github/scripts/inspect_preview_diagnostics.py prior-startup
