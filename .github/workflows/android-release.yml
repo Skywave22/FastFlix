@@ -17,7 +17,6 @@ on:
 # The GitHub token is used to create/update the release; checkout only reads code.
 permissions:
   contents: write
-  actions: read
 
 concurrency:
   group: android-apk-${{ github.event_name == 'push' && github.ref_name || inputs.release_tag || github.ref }}
@@ -48,36 +47,6 @@ jobs:
           ref: 9a4753b317c7153dbfc10738a6787fb3e5be8610
           path: flixquest-betterplayer
           persist-credentials: false
-
-      # Temporary: extract the previous preview failure for diagnosis.
-      - name: Inspect previous preview build failure
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if ! gh api --allow-escape-sequences "repos/$GITHUB_REPOSITORY/actions/jobs/123249376929/logs" > "$RUNNER_TEMP/previous-android.log" 2> "$RUNNER_TEMP/diagnostic-error.log"; then
-            python3 - <<'PY'
-          import os, re
-          from pathlib import Path
-          error = Path(os.environ['RUNNER_TEMP'], 'diagnostic-error.log').read_text(errors='replace')
-          error = re.sub(r'https?://\S+', '<redacted-url>', error)
-          error = error.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
-          print('::error title=Log retrieval failed::' + error)
-          PY
-            exit 1
-          fi
-          python3 - <<'PY'
-          import os, re
-          from pathlib import Path
-          lines = Path(os.environ['RUNNER_TEMP'], 'previous-android.log').read_text(errors='replace').splitlines()
-          markers = re.compile(r'Error:|FAILURE:|What went wrong:|^.* e: |^.* error:')
-          indices = [i for i, line in enumerate(lines) if markers.search(line)]
-          for number, index in enumerate(indices[-20:], start=1):
-              excerpt = '\n'.join(lines[index:min(len(lines), index + 5)])[:3500]
-              excerpt = re.sub(r'\x1b\[[0-9;]*m', '', excerpt)
-              excerpt = excerpt.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
-              print(f'::error title=Previous Android failure {number}::' + excerpt)
-          PY
-          exit 1
 
       - name: Test release configuration validation
         run: python3 -m unittest discover -s .github/scripts -p 'test_*.py'
@@ -162,7 +131,14 @@ jobs:
       - name: Build debug preview APK
         if: ${{ steps.build_mode.outputs.mode == 'preview' }}
         run: |
-          flutter build apk --debug --flavor prod --no-pub
+          set +e
+          flutter build apk --debug --flavor prod --no-pub 2>&1 | tee "$RUNNER_TEMP/preview-build.log"
+          build_status=${PIPESTATUS[0]}
+          set -e
+          if (( build_status != 0 )); then
+            python3 .github/scripts/report_android_failure.py "$RUNNER_TEMP/preview-build.log"
+            exit "$build_status"
+          fi
           mkdir -p release-apks
           cp build/app/outputs/flutter-apk/app-prod-debug.apk release-apks/FlixQuest-preview-debug.apk
           cat > release-apks/README-preview.txt <<'EOF'
@@ -174,9 +150,20 @@ jobs:
           EOF
 
       - name: Run Android download settings tests
+        env:
+          BUILD_MODE: ${{ steps.build_mode.outputs.mode }}
         run: |
+          set +e
           ./android/gradlew -p android :app:testProdDebugUnitTest \
-            --tests 'dev.beamlak.flixquest_v2.downloads.DownloadSettingsTest'
+            --tests 'dev.beamlak.flixquest_v2.downloads.DownloadSettingsTest' 2>&1 | tee "$RUNNER_TEMP/android-test.log"
+          test_status=${PIPESTATUS[0]}
+          set -e
+          if (( test_status != 0 )); then
+            if [[ "$BUILD_MODE" == 'preview' ]]; then
+              python3 .github/scripts/report_android_failure.py "$RUNNER_TEMP/android-test.log"
+            fi
+            exit "$test_status"
+          fi
 
       - name: Build per-ABI APKs
         if: ${{ steps.build_mode.outputs.mode == 'release' }}
