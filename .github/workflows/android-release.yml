@@ -54,7 +54,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/actions/jobs/123249376929/logs" > "$RUNNER_TEMP/previous-android.log"
+          if ! gh api "repos/$GITHUB_REPOSITORY/actions/jobs/123249376929/logs" > "$RUNNER_TEMP/previous-android.log" 2> "$RUNNER_TEMP/diagnostic-error.log"; then
+            python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          error = Path(os.environ['RUNNER_TEMP'], 'diagnostic-error.log').read_text(errors='replace')
+          error = re.sub(r'https?://\S+', '<redacted-url>', error)
+          error = error.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print('::error title=Log retrieval failed::' + error)
+          PY
+            exit 1
+          fi
           python3 - <<'PY'
           import os, re
           from pathlib import Path
