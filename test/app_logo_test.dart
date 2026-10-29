@@ -6,12 +6,23 @@ void main() {
   testWidgets('bundled default wordmark is readable on the dark artwork plate',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
-      home: ColoredBox(color: AppLogo.artworkPlate, child: AppLogo()),
+      home: ColoredBox(
+        color: Colors.white,
+        child: Center(child: SizedBox.square(dimension: 120, child: AppLogo())),
+      ),
     ));
     final image = tester.widget<Image>(find.byType(Image));
     expect((image.image as AssetImage).assetName,
         'assets/images/fastflix/logo_play.png');
     expect(AppLogo.artworkPlate.computeLuminance(), lessThan(0.1));
+    final plate = find.ancestor(
+      of: find.byType(Image),
+      matching: find.byWidgetPredicate((widget) =>
+          widget is DecoratedBox &&
+          widget.decoration is BoxDecoration &&
+          (widget.decoration as BoxDecoration).color == AppLogo.artworkPlate),
+    );
+    expect(plate, findsOneWidget);
     expect(image.semanticLabel, 'FastFlix');
   });
 

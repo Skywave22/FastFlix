@@ -45,12 +45,22 @@ class AppLogo extends StatelessWidget {
     final selected =
         context.watch<SettingsProvider?>()?.fastFlixLogo ?? FastFlixLogo.play;
     final compact = fallbackAsset.endsWith('fq_mark.svg');
-    return Image.asset(
+    final image = Image.asset(
       compact ? selected.markAsset : selected.logoAsset,
       width: width,
       height: height,
       fit: fit,
       semanticLabel: 'FastFlix',
+    );
+    // Full wordmarks use white lettering, so keep them readable even in a
+    // light theme. The compact symbol remains transparent in app bars.
+    if (compact) return image;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: artworkPlate,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: image,
     );
   }
 }
