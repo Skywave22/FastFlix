@@ -3,6 +3,7 @@ import 'package:flixquest/constants/app_constants.dart';
 import 'package:flixquest/provider/app_dependency_provider.dart';
 import 'package:flixquest/screens/common/connection_settings_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -75,6 +76,33 @@ void main() {
         isFalse);
     expect(AppDependencyProvider.validClientScraperUrl('https://x.test/?key=secret'),
         isFalse);
+  });
+
+  testWidgets('TV remote can activate the setup save button', (tester) async {
+    tester.view.physicalSize = const Size(960, 540);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final dependencies = AppDependencyProvider();
+    addTearDown(dependencies.dispose);
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: dependencies,
+      child: MaterialApp(
+        home: Builder(builder: (context) => Scaffold(
+          body: TextButton(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => const ConnectionSettingsScreen(television: true),
+            )),
+            child: const Text('Open TV setup'),
+          ),
+        )),
+      ),
+    ));
+    await tester.tap(find.text('Open TV setup'));
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Connection Save');
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(find.text('Open TV setup'), findsOneWidget);
   });
 
   testWidgets('setup validates values and saves them on this device',

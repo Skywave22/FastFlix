@@ -140,46 +140,49 @@ void main() {
       (tester) async {
     const branding = MethodChannel('io.github.skywave22.fastflix/branding');
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    final calls = <MethodCall>[];
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(branding, (call) async {
-      calls.add(call);
-      return null;
-    });
-    addTearDown(() => TestDefaultBinaryMessengerBinding
-        .instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(branding, null));
-    final settings = SettingsProvider();
-    addTearDown(settings.dispose);
-    await _pumpSettings(tester, settings);
-    expect(settings.fastFlixLogo, FastFlixLogo.play);
+    try {
+      final calls = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(branding, (call) async {
+        calls.add(call);
+        return null;
+      });
+      addTearDown(() => TestDefaultBinaryMessengerBinding
+          .instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(branding, null));
+      final settings = SettingsProvider();
+      addTearDown(settings.dispose);
+      await _pumpSettings(tester, settings);
+      expect(settings.fastFlixLogo, FastFlixLogo.play);
 
-    await _focusLabel(tester, 'App logo');
-    await _select(tester);
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Play');
-    for (final logo in FastFlixLogo.values) {
-      expect(
-        find.byWidgetPredicate((widget) =>
-            widget is Image &&
-            widget.image is AssetImage &&
-            (widget.image as AssetImage).assetName == logo.markAsset),
-        findsOneWidget,
-      );
+      await _focusLabel(tester, 'App logo');
+      await _select(tester);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Play');
+      for (final logo in FastFlixLogo.values) {
+        expect(
+          find.byWidgetPredicate((widget) =>
+              widget is Image &&
+              widget.image is AssetImage &&
+              (widget.image as AssetImage).assetName == logo.markAsset),
+          findsOneWidget,
+        );
+      }
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await _select(tester);
+      expect(settings.fastFlixLogo, FastFlixLogo.wing);
+      expect(sharedPrefsSingleton.getString(SettingsPreferences.FASTFLIX_LOGO),
+          'wing');
+      expect(calls.single.arguments, {'logo': 'wing'});
+
+      await _select(tester);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Speed F');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await _select(tester);
+      expect(settings.fastFlixLogo, FastFlixLogo.f);
+      expect(tester.takeException(), isNull);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
     }
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-    await _select(tester);
-    expect(settings.fastFlixLogo, FastFlixLogo.wing);
-    expect(sharedPrefsSingleton.getString(SettingsPreferences.FASTFLIX_LOGO),
-        'wing');
-    expect(calls.single.arguments, {'logo': 'wing'});
-
-    await _select(tester);
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Speed F');
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-    await _select(tester);
-    expect(settings.fastFlixLogo, FastFlixLogo.f);
-    expect(tester.takeException(), isNull);
   });
 
   testWidgets('remote choices persist and TV buffer reflects its effective cap',

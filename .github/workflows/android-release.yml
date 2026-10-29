@@ -149,7 +149,12 @@ jobs:
             test/tv_home_controller_test.dart \
             test/connection_settings_test.dart \
             test/provider_discovery_test.dart \
+            test/provider_loader_test.dart \
+            test/scraper_api_test.dart \
             test/data/scraper_cache_test.dart \
+            test/tv_provider_order_dialog_test.dart \
+            test/tmdb_connectivity_test.dart \
+            test/tmdb_proxy_search_test.dart \
             test/fastflix_preferences_test.dart \
             test/hindi_source_priority_test.dart \
             test/manifest_size_estimator_test.dart \
@@ -195,6 +200,10 @@ jobs:
           This is a debug preview, not a production release.
           It uses the example configuration, including an emulator-only Laravel URL
           and an empty TMDB key. Online features may not work without real settings.
+          On the device, Settings > Catalog & providers accepts a public TMDB v3 key
+          and a compatible provider URL. This does not configure the Laravel backend.
+          Values entered there are stored locally without encryption; never enter
+          passwords, access tokens, or server/admin secrets.
           Its deliberately invalid Firebase options do not register the app; Firebase
           services cannot work until the new package is registered in Firebase.
           It is signed with a temporary debug key and cannot update an installation

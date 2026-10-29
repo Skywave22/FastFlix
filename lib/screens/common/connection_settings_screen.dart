@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../design/app_palette.dart';
 import '../../mobile/widgets/page_kit.dart';
 import '../../provider/app_dependency_provider.dart';
+import '../../tv/focus/tv_keymap.dart';
 
 /// Optional public-client overrides for builds without a working bootstrap.
 /// Empty fields restore the bundled or remotely supplied values.
@@ -22,6 +23,7 @@ class _ConnectionSettingsScreenState extends State<ConnectionSettingsScreen> {
   final _form = GlobalKey<FormState>();
   late final TextEditingController _tmdbKey;
   late final TextEditingController _scraperUrl;
+  final _saveFocus = FocusNode(debugLabel: 'Connection Save');
   bool _saving = false;
   String? _error;
 
@@ -37,6 +39,7 @@ class _ConnectionSettingsScreenState extends State<ConnectionSettingsScreen> {
   void dispose() {
     _tmdbKey.dispose();
     _scraperUrl.dispose();
+    _saveFocus.dispose();
     super.dispose();
   }
 
@@ -69,7 +72,7 @@ class _ConnectionSettingsScreenState extends State<ConnectionSettingsScreen> {
     final PreferredSizeWidget appBar = widget.television
         ? AppBar(title: Text(title))
         : PageAppBar(title: title, contentWidth: 760);
-    return Scaffold(
+    final screen = Scaffold(
       backgroundColor: palette.page,
       appBar: appBar,
       body: SafeArea(
@@ -129,6 +132,8 @@ class _ConnectionSettingsScreenState extends State<ConnectionSettingsScreen> {
                     alignment: Alignment.centerLeft,
                     child: FilledButton(
                       key: const ValueKey<String>('connection-save'),
+                      focusNode: _saveFocus,
+                      autofocus: widget.television,
                       onPressed: _saving ? null : _save,
                       child: Text(tr('save')),
                     ),
@@ -139,6 +144,13 @@ class _ConnectionSettingsScreenState extends State<ConnectionSettingsScreen> {
           ),
         ),
       ),
+    );
+    if (!widget.television) return screen;
+    return TvKeymap(
+      onBack: () async {
+        await Navigator.of(context).maybePop();
+      },
+      child: screen,
     );
   }
 }
