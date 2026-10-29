@@ -316,9 +316,9 @@ best-effort basis so successive previews can usually update each other. The key
 may change if the cache expires; it is not suitable for production. The preview
 starts with `.env.example`, but uses any public `TMDB_API_KEY`, `FLIXQUEST_API_URL`,
 and `LARAVEL_API_URL` values present in a partial `FLIXQUEST_ENV` secret. A
-separate Actions secret named `TMDB_API_KEY` overrides the TMDB entry; an Actions
-secret or variable named `FLIXQUEST_API_URL` or `LARAVEL_API_URL` similarly
-overrides its URL. These values are bundled into the APK and are visible to
+separate Actions secret or variable named `TMDB_API_KEY` overrides the TMDB
+entry; an Actions secret or variable named `FLIXQUEST_API_URL` or
+`LARAVEL_API_URL` similarly overrides its URL. These values are bundled into the APK and are visible to
 anyone who downloads it; never use account tokens, passwords, or server secrets.
 The workflow summary shows which values were supplied, without printing them.
 

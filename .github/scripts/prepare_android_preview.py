@@ -87,6 +87,11 @@ def main() -> None:
                 handle.write(f'- {label}: {state}\n')
             handle.write('These public-client values are bundled in the APK; '
                          'anyone with the artifact can inspect them.\n')
+    for label, name in (('TMDB client key', 'TMDB_API_KEY'),
+                        ('Provider API URL', 'FLIXQUEST_API_URL'),
+                        ('Backend URL', 'LARAVEL_API_URL')):
+        state = 'configured' if configured[name] else 'not configured'
+        print(f'::notice::Preview {label}: {state} (value not shown).')
     print('Prepared preview public-client configuration without printing values.')
 
 

@@ -61,6 +61,7 @@ class PreviewConfigurationTest(unittest.TestCase):
                                 'PREVIEW_TMDB_API_KEY': 'private-test-key'})
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertNotIn('private-test-key', result.stdout + result.stderr)
+            self.assertIn('Preview TMDB client key: configured', result.stdout)
             self.assertEqual((root / '.env').stat().st_mode & 0o777, 0o600)
             self.assertIn('private-test-key', (root / '.env').read_text())
 

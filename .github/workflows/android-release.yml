@@ -88,7 +88,7 @@ jobs:
           # server: anyone with the APK can inspect them. A partial FLIXQUEST_ENV
           # still applies when signing/Firebase are unavailable.
           FLIXQUEST_ENV: ${{ secrets.FLIXQUEST_ENV }}
-          PREVIEW_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          PREVIEW_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY || vars.TMDB_API_KEY }}
           PREVIEW_PROVIDER_URL: ${{ secrets.FLIXQUEST_API_URL || vars.FLIXQUEST_API_URL }}
           PREVIEW_BACKEND_URL: ${{ secrets.LARAVEL_API_URL || vars.LARAVEL_API_URL }}
         run: |
@@ -120,10 +120,22 @@ jobs:
 
       - name: Reuse preview-only debug signing key when cached
         if: ${{ steps.build_mode.outputs.mode == 'preview' }}
+        id: preview_debug_signing
         uses: actions/cache@v5
         with:
           path: ~/.android/debug.keystore
           key: fastflix-preview-debug-signing-v1
+
+      - name: Report preview signing continuity
+        if: ${{ steps.build_mode.outputs.mode == 'preview' }}
+        env:
+          CACHE_HIT: ${{ steps.preview_debug_signing.outputs.cache-hit }}
+        run: |
+          if [[ "$CACHE_HIT" == 'true' ]]; then
+            echo '::notice::Restored the cached preview debug signing key.'
+          else
+            echo '::notice::No previous preview debug key was cached; this build creates one.'
+          fi
 
       - name: Set up Java 17
         uses: actions/setup-java@v6
