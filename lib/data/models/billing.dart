@@ -18,7 +18,7 @@ String? _id(Object? value) => JsonReader.asString(value);
 class PlusPlan with _$PlusPlan {
   const factory PlusPlan({
     required String code,
-    @Default('FlixQuest Plus') String name,
+    @Default('FastFlix Plus') String name,
     @JsonKey(name: 'amount_cents') required int amountCents,
     @Default('USD') String currency,
     @JsonKey(name: 'interval_days') required int intervalDays,

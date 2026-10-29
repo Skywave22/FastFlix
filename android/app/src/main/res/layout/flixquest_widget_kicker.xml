@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The app hero card's kicker: the FlixQuest mark in the accent, then the label in caps. -->
+<!-- The app hero card's kicker: the FastFlix mark in the accent, then the label in caps. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flixquest/constants/app_constants.dart';
 import 'package:flixquest/functions/player_buffering_configuration.dart';
+import 'package:flixquest/models/fastflix_logo.dart';
 import 'package:flixquest/preferences/setting_preferences.dart';
 import 'package:flixquest/provider/app_dependency_provider.dart';
 import 'package:flixquest/provider/settings_provider.dart';
@@ -12,6 +13,7 @@ import 'package:http/testing.dart';
 import 'package:flixquest/tv/app/tv_design.dart';
 import 'package:flixquest/tv/focus/tv_screen_focus_controller.dart';
 import 'package:flixquest/tv/screens/tv_settings_screen.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -134,6 +136,52 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('TV remote previews and saves the selected FastFlix logo',
+      (tester) async {
+    const branding = MethodChannel('io.github.skywave22.fastflix/branding');
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(branding, (call) async {
+      calls.add(call);
+      return null;
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(branding, null));
+    final settings = SettingsProvider();
+    addTearDown(settings.dispose);
+    await _pumpSettings(tester, settings);
+    expect(settings.fastFlixLogo, FastFlixLogo.play);
+
+    await _focusLabel(tester, 'App logo');
+    await _select(tester);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Play');
+    for (final logo in FastFlixLogo.values) {
+      expect(
+        find.byWidgetPredicate((widget) =>
+            widget is Image &&
+            widget.image is AssetImage &&
+            (widget.image as AssetImage).assetName == logo.markAsset),
+        findsOneWidget,
+      );
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await _select(tester);
+    expect(settings.fastFlixLogo, FastFlixLogo.wing);
+    expect(sharedPrefsSingleton.getString(SettingsPreferences.FASTFLIX_LOGO),
+        'wing');
+    expect(calls.single.arguments, {'logo': 'wing'});
+
+    await _select(tester);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Speed F');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await _select(tester);
+    expect(settings.fastFlixLogo, FastFlixLogo.f);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('remote choices persist and TV buffer reflects its effective cap',
       (tester) async {
     final settings = SettingsProvider();
@@ -145,7 +193,7 @@ void main() {
       'PLAYBACK',
       'SUBTITLES',
       'STORAGE',
-      'ABOUT FLIXQUEST',
+      'ABOUT FASTFLIX',
     ];
     for (var index = 1; index < headings.length; index++) {
       expect(tester.getTopLeft(find.text(headings[index])).dy,

@@ -7,6 +7,7 @@ import '../../functions/function.dart';
 import '../../functions/language_names.dart';
 import '../../models/app_colors.dart';
 import '../../models/app_mode.dart';
+import '../../models/fastflix_logo.dart';
 import '../../screens/common/language_choose.dart' show appLanguageChoices;
 import '../../screens/common/update_screen.dart';
 import '../../functions/subtitle_style.dart';
@@ -117,6 +118,13 @@ class TvSettingsScreen extends StatelessWidget {
             value: _appModeLabel(settings.appMode),
             icon: PhosphorIcons.monitor(),
             onActivate: () => _showAppModePicker(context, settings),
+          ),
+          _TvSettingTile(
+            key: const ValueKey<String>('app-logo'),
+            label: tr('choose_app_logo'),
+            value: _logoLabel(settings.fastFlixLogo),
+            icon: PhosphorIcons.imageSquare(),
+            onActivate: () => _showLogoPicker(context, settings),
           ),
         ];
         final sourceTiles = <Widget>[
@@ -385,6 +393,74 @@ class TvSettingsScreen extends StatelessWidget {
       ],
     );
     if (selected != null) onChanged(selected);
+  }
+
+  static String _logoLabel(FastFlixLogo logo) => tr(switch (logo) {
+        FastFlixLogo.play => 'logo_play',
+        FastFlixLogo.wing => 'logo_wing',
+        FastFlixLogo.f => 'logo_f',
+      });
+
+  static Future<void> _showLogoPicker(
+    BuildContext context,
+    SettingsProvider settings,
+  ) async {
+    final selected = await showTvDialog<FastFlixLogo>(
+      context: context,
+      title: tr('choose_app_logo'),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(tr('choose_app_logo_description')),
+          const SizedBox(height: 16),
+          Row(
+            children: <Widget>[
+              for (final logo in FastFlixLogo.values)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xff0a0a0d),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          Image.asset(logo.markAsset,
+                              height: 56, fit: BoxFit.contain),
+                          const SizedBox(height: 6),
+                          Text(_logoLabel(logo),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+      actions: <TvDialogAction>[
+        for (final logo in FastFlixLogo.values)
+          TvDialogAction(
+            label: _logoLabel(logo),
+            autofocus: settings.fastFlixLogo == logo,
+            isPrimary: settings.fastFlixLogo == logo,
+            onPressed: () => Navigator.of(context).pop(logo),
+          ),
+      ],
+    );
+    if (selected == null || !context.mounted) return;
+    final launcherUpdated = await settings.setFastFlixLogo(selected);
+    if (!launcherUpdated && context.mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(tr('launcher_logo_unavailable'))),
+      );
+    }
   }
 
   static String _seconds(int seconds) =>

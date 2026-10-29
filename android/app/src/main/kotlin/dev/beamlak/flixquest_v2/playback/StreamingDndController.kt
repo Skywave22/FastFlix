@@ -77,7 +77,7 @@ class StreamingDndController(private val context: Context) {
                 }
                 ruleId = manager.addAutomaticZenRule(
                     AutomaticZenRule(
-                        "FlixQuest streaming",
+                        "FastFlix streaming",
                         ComponentName(context, StreamingDndConditionProvider::class.java),
                         null,
                         conditionId(context),
@@ -105,7 +105,7 @@ class StreamingDndController(private val context: Context) {
 
         fun condition(context: Context, active: Boolean) = Condition(
             conditionId(context),
-            "FlixQuest streaming",
+            "FastFlix streaming",
             if (active) Condition.STATE_TRUE else Condition.STATE_FALSE,
         )
     }

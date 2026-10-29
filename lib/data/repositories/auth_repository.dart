@@ -37,7 +37,7 @@ class AuthRepository {
           data['code'] == 'wallet_credit_remaining') {
         return Result.err(Failure.validation({
           'wallet_credit_remaining': [
-            (data['message'] as String?) ?? 'Your FlixQuest balance has credit.'
+            (data['message'] as String?) ?? 'Your FastFlix balance has credit.'
           ]
         }, message: data['message'] as String?));
       }

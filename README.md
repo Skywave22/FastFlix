@@ -1,8 +1,8 @@
 <p align="center">
-  <img alt="FlixQuest" src="assets/images/FlixQuest.png" width="180">
+  <img alt="FastFlix" src="assets/images/fastflix/logo_play.png" width="280">
 </p>
 
-<h1 align="center">FlixQuest</h1>
+<h1 align="center">FastFlix</h1>
 
 <p align="center">
   <strong>A modern, open-source streaming application for Movies, TV Shows, and Live TV built with Flutter.</strong><br>
@@ -76,6 +76,7 @@
 - **Ambient Mode**: Dynamic color palette extraction from movie/show posters and backdrops for an immersive ambient background glow.
 - **Occasional & Seasonal Themes**: Dynamic holiday themes (Christmas, New Year, Halloween, Valentine's Day, Easter, Eid, Diwali, Ethiopian New Year, etc.) with animated vector particle overlays (snow, fireworks, bats, hearts, adey flowers, confetti, stars, sparkles). Configurable via Firebase Remote Config.
 - **Themes**: Light, Dark, AMOLED Pure Black, and Material 3 Dynamic Color palettes.
+- **Logo**: Choose among the three bundled designs in phone or TV settings; the third supplied design is the default. On Android the launcher icon changes too (some launchers may update it later).
 
 ### 🔐 User Profiles & Cloud Synchronization
 
@@ -113,7 +114,7 @@
 
 ## ⚙️ Environment Variables & API Keys
 
-FlixQuest uses `flutter_dotenv` to load environment variables. Create a `.env` file in the root directory of the project:
+FastFlix uses `flutter_dotenv` to load environment variables. Create a `.env` file in the root directory of the project:
 
 ```env
 # Required: TMDB API Key for movie and TV show metadata
@@ -139,7 +140,7 @@ MIXPANEL_API_KEY=
 
 ## 🕷️ FlixQuest Scraper API v2
 
-FlixQuest communicates with **FlixQuest Scraper API v2** for resolving streaming sources. The backend service is closed-source; please contact [flixquestapp@gmail.com](mailto:flixquestapp@gmail.com) for support or API instance access.
+FastFlix communicates with **FlixQuest Scraper API v2** for resolving streaming sources. The backend service is closed-source; please contact [flixquestapp@gmail.com](mailto:flixquestapp@gmail.com) for support or API instance access.
 
 The client-side API contract and payload schemas are documented in [`openapi.json`](openapi.json).
 
@@ -158,7 +159,7 @@ Key endpoints consumed by the app:
 
 ## 🔥 Firebase Configuration
 
-FlixQuest uses Firebase for several services:
+FastFlix can use Firebase for several services when configured:
 
 | Service                       | Purpose                                                                                                                                                                                                                             |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -169,7 +170,7 @@ FlixQuest uses Firebase for several services:
 | **Firebase In-App Messaging** | Dynamic in-app banners and update notices.                                                                                                                                                                                          |
 | **Firebase Analytics**        | Usage and performance analytics.                                                                                                                                                                                                    |
 
-> **Note**: To connect to your own Firebase project, place your `google-services.json` inside `android/app/`.
+> **Note**: Register `io.github.skywave22.fastflix` in your Firebase project and use its downloaded `google-services.json`. The tracked root configuration belongs to the old package and cannot register FastFlix. See the release configuration below.
 
 ---
 
@@ -206,8 +207,8 @@ better_player_plus:
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/BeamlakAschalew/flixquest.git
-   cd flixquest
+   git clone https://github.com/Skywave22/FastFlix.git
+   cd FastFlix
    ```
 
 2. **Clone the custom better_player repository** (if using local path):
@@ -216,7 +217,7 @@ better_player_plus:
    cd ..
    git clone https://github.com/BeamlakAschalew/flixquest-betterplayer.git
    git -C flixquest-betterplayer checkout --detach 9a4753b317c7153dbfc10738a6787fb3e5be8610
-   cd flixquest
+   cd FastFlix
    ```
 
 3. **Configure Environment Variables**:
@@ -316,9 +317,10 @@ needed. **Everything in `.env` is bundled into the APK and can be extracted**;
 never put server-side credentials or other private secrets there. The tracked
 `android/app/google-services.json` registers the old package only and cannot be
 used for this application ID. The workflow validates `FIREBASE_ANDROID_CONFIG`
-and writes it to a release-only source set; editing the old package name in JSON
-is not a Firebase registration. The new application ID installs separately from
-the old app even if signed with the same key. The release keystore and its
+and writes it to the `prod/release` and `prod/debug` source sets (the latter for
+CI unit tests); editing the old package name in JSON is not a Firebase
+registration. The new application ID installs separately from the old app even
+if signed with the same key. The release keystore and its
 passwords remain private and must be retained for future FastFlix updates.
 Google Sign-In, push notifications, Remote Config, app links and billing may
 also need the new package and signing fingerprint registered in their respective
@@ -367,7 +369,7 @@ Contributions, feature suggestions, design ideas, and translations are always we
 ## ⚠️ Disclaimer
 
 - The developers of this application have no affiliation with content providers like TMDB, DaddyLive, or any third-party streaming websites.
-- FlixQuest **does not host or upload any video content**. All media is retrieved via public scrapers and third-party APIs.
+- FastFlix **does not host or upload any video content**. All media is retrieved via public scrapers and third-party APIs.
 - In case of copyright infringement, please contact the responsible hosting services or source providers directly.
 
 ---
@@ -391,5 +393,5 @@ Contributions, feature suggestions, design ideas, and translations are always we
 
 <p align="center">
   <i>GNU, but for Entertainment</i><br><br>
-  <strong>© 2022–2026 FlixQuest</strong>
+  <strong>FastFlix, based on FlixQuest © 2022–2026</strong>
 </p>

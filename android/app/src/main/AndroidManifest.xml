@@ -157,6 +157,8 @@
         <activity-alias android:name=".FastFlixPlayIcon"
             android:targetActivity=".MainActivity"
             android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:banner="@drawable/tv_banner"
             android:label="${appLabel}"
             android:enabled="true" android:exported="true">
             <intent-filter>
@@ -171,6 +173,8 @@
         <activity-alias android:name=".FastFlixWingIcon"
             android:targetActivity=".MainActivity"
             android:icon="@mipmap/ic_fastflix_wing"
+            android:roundIcon="@mipmap/ic_fastflix_wing"
+            android:banner="@drawable/tv_banner_wing"
             android:label="${appLabel}"
             android:enabled="false" android:exported="true">
             <intent-filter>
@@ -185,6 +189,8 @@
         <activity-alias android:name=".FastFlixFIcon"
             android:targetActivity=".MainActivity"
             android:icon="@mipmap/ic_fastflix_f"
+            android:roundIcon="@mipmap/ic_fastflix_f"
+            android:banner="@drawable/tv_banner_f"
             android:label="${appLabel}"
             android:enabled="false" android:exported="true">
             <intent-filter>
