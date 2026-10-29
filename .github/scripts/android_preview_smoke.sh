@@ -11,6 +11,11 @@ mkdir -p "$artifact_dir"
 adb shell cmd connectivity airplane-mode enable >/dev/null 2>&1 || true
 adb shell svc wifi disable >/dev/null 2>&1 || true
 adb shell svc data disable >/dev/null 2>&1 || true
+if [[ "$(adb shell settings get global airplane_mode_on | tr -d '\r')" != '1' ||
+      "$(adb shell settings get global wifi_on | tr -d '\r')" != '0' ]]; then
+  echo '::error::Could not verify the emulator is offline; skipping startup.'
+  exit 1
+fi
 adb install -r "$1"
 # A first-launch notification prompt is a system window, not an app failure.
 # Grant it in this disposable emulator so we can inspect the Flutter content
