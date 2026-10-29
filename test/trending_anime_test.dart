@@ -105,6 +105,24 @@ void main() {
     );
   }
 
+  test('ranking scans a second batch when five pages contain too few anime', () async {
+    final catalog = FakeCatalog({
+      for (var page = 1; page <= 10; page++)
+        page: [item(MediaKind.movie, page, language: page == 6 ? 'ja' : 'en')],
+    });
+    final settings = SettingsProvider();
+    final dependencies = AppDependencyProvider();
+    addTearDown(settings.dispose);
+    addTearDown(dependencies.dispose);
+    final items = await CatalogHomeFeedSource(
+      settings: settings,
+      dependencies: dependencies,
+      catalog: catalog,
+    ).list(MediaKind.movie, HomeList.animeTrending);
+    expect(items.map((i) => i.id), [6]);
+    expect(catalog.requests, hasLength(10));
+  });
+
   test('See all skips empty filtered pages, deduplicates and retries', () async {
     final requests = <int>[];
     var failOnce = true;

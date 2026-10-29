@@ -493,8 +493,11 @@ void main() {
       expect(accentTexts, isEmpty);
       expect(find.text('CONTINUE_WATCHING'), findsOneWidget);
       expect(
-        find.byWidgetPredicate((widget) =>
-            widget is Image && widget.semanticLabel == 'FastFlix'),
+        find.descendant(
+          of: find.byType(HeroCard),
+          matching: find.byWidgetPredicate((widget) =>
+              widget is Image && widget.semanticLabel == 'FastFlix'),
+        ),
         findsOneWidget,
       );
       final accentIcons = tester

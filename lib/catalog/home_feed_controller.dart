@@ -118,25 +118,29 @@ class CatalogHomeFeedSource implements HomeFeedSource {
 
   Future<List<MediaItem>> _trendingAnime(MediaKind kind) async {
     final trendingUrl = Uri.parse(urlFor(kind, HomeList.trendingWeek)!);
-    final pages = await Future.wait([
-      for (var page = 1; page <= 5; page++)
-        catalog.loadRow(
-          kind: kind,
-          url: trendingUrl
-              .replace(
-                queryParameters: {
-                  ...trendingUrl.queryParameters,
-                  'page': '$page',
-                },
-              )
-              .toString(),
-          settings: settings,
-          dependencies: dependencies,
-        ),
-    ]);
-    // Do not silently fill a trending ranking with merely popular titles.
-    // If TMDB exposes fewer than ten matches in these pages, show fewer.
-    return topTrendingAnime(pages.expand((items) => items));
+    final items = <MediaItem>[];
+    // Fetch in bounded batches. If five pages already contain ten anime titles,
+    // avoid more requests; otherwise scan up to ten trending pages.
+    for (var first = 1; first <= 10; first += 5) {
+      final pages = await Future.wait([
+        for (var page = first; page < first + 5; page++)
+          catalog.loadRow(
+            kind: kind,
+            url: trendingUrl.replace(queryParameters: {
+              ...trendingUrl.queryParameters,
+              'page': '$page',
+            }).toString(),
+            settings: settings,
+            dependencies: dependencies,
+          ),
+      ]);
+      items.addAll(pages.expand((page) => page));
+      if (topTrendingAnime(items).length >= 10 || pages.any((p) => p.isEmpty)) {
+        break;
+      }
+    }
+    // Never fill a trending ranking with merely popular titles.
+    return topTrendingAnime(items);
   }
 
   @override
