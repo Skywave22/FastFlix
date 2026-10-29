@@ -214,6 +214,67 @@ void main() {
     expect(calls, 1);
   });
 
+  test('a new TMDB key does not join an older in-flight request', () async {
+    final started = Completer<void>();
+    final release = Completer<void>();
+    var calls = 0;
+    dio.httpClientAdapter = CallbackDioAdapter((request) async {
+      calls++;
+      if (request.uri.queryParameters['api_key'] == 'old') {
+        started.complete();
+        await release.future;
+        return jsonResponse('{"success":false,"status_code":7}', 401);
+      }
+      return jsonResponse('{"title":"new key works"}', 200);
+    });
+    final old = dio.get<Object>('$url?api_key=old').then<Object?>(
+      (value) => value,
+      onError: (Object error) => error,
+    );
+    await started.future;
+    try {
+      final fresh = await dio.get<Object>('$url?api_key=new')
+          .timeout(const Duration(seconds: 2));
+      expect(fresh.data, {'title': 'new key works'});
+    } finally {
+      release.complete();
+    }
+    expect(await old, isA<DioException>());
+    expect(calls, 2);
+  });
+
+  test('a proxy request does not join a failing direct flight', () async {
+    final started = Completer<void>();
+    final release = Completer<void>();
+    var calls = 0;
+    dio.httpClientAdapter = CallbackDioAdapter((request) async {
+      calls++;
+      if (request.uri.host == 'api.themoviedb.org') {
+        started.complete();
+        await release.future;
+        return jsonResponse('{"success":false,"status_code":7}', 401);
+      }
+      return jsonResponse('{"title":"proxy works"}', 200);
+    });
+    final direct = dio.get<Object>('$url?api_key=key').then<Object?>(
+      (value) => value,
+      onError: (Object error) => error,
+    );
+    await started.future;
+    try {
+      final proxy = await dio.get<Object>('$url?api_key=key',
+          options: Options(extra: {
+            'tmdbProxyEnabled': true,
+            'tmdbProxyUrl': 'https://proxy.example/proxy',
+          })).timeout(const Duration(seconds: 2));
+      expect(proxy.data, {'title': 'proxy works'});
+    } finally {
+      release.complete();
+    }
+    expect(await direct, isA<DioException>());
+    expect(calls, 2);
+  });
+
   test('background refresh serves stale immediately then replaces it',
       () async {
     adapter.enqueueJson({'title': 'saved'});

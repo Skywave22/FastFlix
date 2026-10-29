@@ -6,7 +6,11 @@ class SingleFlightInterceptor extends Interceptor {
   SingleFlightInterceptor(this.dio, {this.defaultScope});
   final Dio dio;
   final String? defaultScope;
-  final _pending = <String, Future<Response<dynamic>>>{};
+  // The real request URI is used only as a transient in-memory identity; it
+  // must never be logged or written to the persistent cache because it may
+  // contain a TMDB client key. Cache keys intentionally strip that key, but
+  // two requests made with different keys (or routes) cannot share a flight.
+  final _pending = <(String, ResponseType, String), Future<Response<dynamic>>>{};
 
   @override
   void onRequest(
@@ -17,7 +21,7 @@ class SingleFlightInterceptor extends Interceptor {
       handler.next(request);
       return;
     }
-    final key = '${selection.key}:${request.responseType.name}';
+    final key = (selection.key, request.responseType, request.uri.toString());
     final operation = _pending.putIfAbsent(
         key,
         () => dio.fetch<dynamic>(
